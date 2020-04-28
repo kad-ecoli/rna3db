@@ -1,8 +1,8 @@
-## RNA3DB: maintaining local copy of RNA 3D structure ##
+# RNA3DB: a maintaining local copy of RNA 3D structure #
 
 This package synchronize and curate the updated set of RNA structures from the Protein Data Bank (PDB) ftp site.
 
-### Content ####
+### Content ###
 [1] ``script/`` scripts and executables for update.
 - ``pdb/derived_data/pdb_seqres.txt.gz`` FASTA file for all chains (protein and nucleic acid)
 - ``pdb/derived_data/na_seqres.txt`` FASTA file for all nucleic acid chains
@@ -14,7 +14,7 @@ This package synchronize and curate the updated set of RNA structures from the P
 
 [3] ``pdb/data/structures/all/pdb/`` raw PDB files.
 
-### Update ####
+### Update ###
 ```bash
 script/update.sh
 ```
