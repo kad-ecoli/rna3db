@@ -1,4 +1,4 @@
-# RNA3DB: a maintaining local copy of RNA 3D structure #
+# RNA3DB: maintaining a local copy of RNA 3D structure #
 
 This package synchronize and curate the updated set of RNA structures from the Protein Data Bank (PDB) ftp site.
 
