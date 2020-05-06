@@ -17,8 +17,11 @@ echo "Download PDB entrys"
 mkdir -p $rootdir/pdb/data/structures/all/pdb/
 cd       $rootdir/pdb/data/structures/all/pdb/
 for chain in `cat $rootdir/pdb/derived_data/na_chain.list`;do
-    if [ ! -s "$chain.pdb" ];then
-        $bindir/fetch.py $chain
+    if [ ! -s "${chain}.pdb.gz" ];then
+        if [ ! -s "$chain.pdb" ];then
+            $bindir/fetch.py $chain
+        fi
+        gzip ${chain}.pdb
     fi
 done
 rm `ls|grep -P "^[\da-z]{4}\.pdb"` `ls|grep pdb-bundle.tar.gz`

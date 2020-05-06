@@ -17,6 +17,7 @@ getNAtype.py na_chain.list na_type.list
     If ouput file na_type.list, new entries will be appended to the output.
 '''
 import sys, os
+import gzip
 
 if len(sys.argv)<3:
     sys.stderr.write(docstring)
@@ -42,13 +43,18 @@ fp.close()
 type_list=[]
 txt=''
 for chain in chain_list:
-    filename=chain+".pdb"
-    if not os.path.isfile(filename):
-        sys.stderr.write("ERROR! No such file %s/%s\n"%(os.getcwd(),filename))
-        continue
     dna_count=0
     rna_count=0
-    fp=open(filename,'r')
+    filename=chain+".pdb"
+    if not os.path.isfile(filename):
+        filename=chain+".pdb.gz"
+        if not os.path.isfile(filename):
+            sys.stderr.write("ERROR! No such file %s/%s\n"%(
+                os.getcwd(),filename))
+            continue
+        fp=gzip.open(filename,'r')
+    else:
+        fp=open(filename,'r')
     lines=fp.read().splitlines()
     fp.close()
     for line in lines:

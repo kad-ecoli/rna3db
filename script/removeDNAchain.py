@@ -25,6 +25,9 @@ for chain in dna_chain_list:
     filename=chain+".pdb"
     if os.path.isfile(filename):
         dna_file_list.append(filename)
+    filename=chain+".pdb.gz"
+    if os.path.isfile(filename):
+        dna_file_list.append(filename)
 
 print("removing %d DNA, DNA/RNA and DNA-RNA chains"%len(dna_file_list))
 for filename in dna_file_list:
