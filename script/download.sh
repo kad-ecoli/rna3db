@@ -13,7 +13,7 @@ if [ -s "$rootdir/pdb/derived_data/na_type.list" ];then
     $bindir/getRNAlist.py $rootdir/pdb/derived_data/na_chain.list $rootdir/pdb/derived_data/na_type.list $rootdir/pdb/derived_data/na_chain.list
 fi
 
-echo "Download PDB entrys"
+echo "Download PDB entries"
 mkdir -p $rootdir/pdb/data/structures/all/pdb/
 cd       $rootdir/pdb/data/structures/all/pdb/
 for chain in `cat $rootdir/pdb/derived_data/na_chain.list`;do
