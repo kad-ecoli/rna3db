@@ -28,9 +28,9 @@ options:
             (For PDB format input only)
 
 -mol={rna,protein,rna,dna,all} which macromolecule type to use
-    rna     - (default) use " C3'" atoms
-    dna     - use " C3'" atoms, the same as rna
-    all     - use " CA " or " C3'" atoms
+    rna     - (default) use " C3'" and " P  " atoms
+    dna     - the same as rna
+    all     - use " CA " and " C3'" and " P  " atoms
     protein - use " CA " atoms
 
 -dir={folder} -suffix={suffix}
@@ -165,8 +165,8 @@ def pdbtxt2seq(txt='',infile='pdb.pdb',PERMISSIVE="TER",outfmt="PDB",
             continue
 
         if (mol=="protein" and line[12:16]!=" CA ") or \
-           (mol in {"rna","dna"} and line[12:16]!=" C3'") or \
-           (mol=="all" and line[12:16]!=" CA " and line[12:16]!=" C3'"):
+           (mol in {"rna","dna"} and not line[12:16] in {" P  "," C3'"}) or \
+           (mol=="all" and not line[12:16] in {" CA "," P  "," C3'"}):
             continue
         if not line[16] in [' ','A']: # remove alternative location
             continue
@@ -175,7 +175,7 @@ def pdbtxt2seq(txt='',infile='pdb.pdb',PERMISSIVE="TER",outfmt="PDB",
 
         if   PERMISSIVE == "ATOM"   and line[0:6]!="ATOM  ":
             continue
-        elif PERMISSIVE in {"TER","HETATM"} and not line[0:6] in {"ATOM  ","HETATM"}:
+        elif not line[0:6] in {"ATOM  ","HETATM"}:
             continue
         
         # underscore for empty chain identifier
