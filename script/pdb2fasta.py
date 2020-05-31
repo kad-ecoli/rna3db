@@ -37,7 +37,7 @@ options:
     batch convert a folder of pdb files at {folder} with file name extension
     {suffix}. Example: 
     $ echo 157dA 157dB > list
-    $ pdb2fasta -dir ./ list -suffix .pdb.gz
+    $ pdb2fasta -dir=./ list -suffix=.pdb.gz
     This will convert ./157dA.pdb.gz and ./157dB.pdb.gz
 '''
 import sys,os

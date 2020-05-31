@@ -5,7 +5,7 @@ rootdir=`dirname $bindir`
 echo "database path $rootdir"
 cd $rootdir
 
-#echo "Make MODRES"
+echo "Make MODRES"
 #zcat $rootdir/pdb/data/structures/all/pdb/*gz |grep "^MODRES" > \
      #$rootdir/pdb/derived_data/MODRES
 #$bindir/parseMODRES.py $rootdir/pdb/derived_data/MODRES $bindir/MODRES_dicts.py
@@ -13,11 +13,10 @@ cd $rootdir
 echo "Convert PDB entries to fasta"
 cd       $rootdir/pdb/data/structures/all/pdb/
 mkdir -p $rootdir/cull
-
-$bindir/pdb2fasta.py -dir=$rootdir/pdb/data/structures/all/pdb/ \
-    $rootdir/pdb/derived_data/na_chain.list -suffix=.pdb.gz \
-    -allowX=false -mol=rna -PERMISSIVE=TER | cut -f1 -d: \
-    > $rootdir/cull/pdb_atom.fasta
+#$bindir/pdb2fasta.py -dir=$rootdir/pdb/data/structures/all/pdb/ \
+    #$rootdir/pdb/derived_data/na_chain.list -suffix=.pdb.gz \
+    #-allowX=false -mol=rna -PERMISSIVE=TER | cut -f1 -d: \
+    #> $rootdir/cull/pdb_atom.fasta
 
 echo "Cull sequence"
 $bindir/SortFastaWithResolution.py $rootdir/pdb/derived_data/index/resolu.idx $rootdir/cull/pdb_atom.fasta $rootdir/cull/pdb_atom.sort
@@ -42,3 +41,45 @@ for resolu in $resolu_list;do
 done
 
 $bindir/makeCullTable.py $rootdir/cull
+
+echo "Clean PDB"
+resolu_cs_list="all_c1.0_s1.0"
+
+for resolu_cs in $resolu_cs_list;do
+    echo $resolu_cs
+    mkdir -p $rootdir/cull/$resolu_cs/DSSR
+    grep '>' $rootdir/cull/pdb_atom.sort.$resolu_cs|cut -f1|sed 's/>//g' > $rootdir/cull/$resolu_cs/list
+    cd $rootdir/cull/$resolu_cs
+
+    echo "remove files not listed by $PWD/list"
+    for target in `ls *.pdb|cut -f1 -d.`;do
+        GREP=`grep $target list`
+	if [ -z "$GREP" ];then
+	    echo rm $target.pdb
+	    rm $target.pdb
+	    rm DSSR/$target.dssr
+	fi
+    done
+    
+    echo "update $PWD/$list.new"
+    for target in `cat list`;do
+        if [ ! -s "${target}.pdb" ];then
+	    echo $target
+	fi
+    done > list.new
+    
+    echo "generate $PWD/*.pdb"
+    $bindir/clean_pdb.py -dir=$rootdir/pdb/data/structures/all/pdb/ list.new -suffix=.pdb.gz .pdb -StartIndex=1 -NewChainID=_
+    rm list.new
+
+    echo "generate $PWD/list.atomic"
+    $bindir/AtomsPerResidue.py -dir=. list -suffix=.pdb|grep -P "^\w+\s[2]\d\.\d{2}$"|cut -f1 > list.atomic
+
+    echo "generate $PWD/DSSR/*.dssr"
+    for target in `cat list`;do
+    	if [ ! -s "$rootdir/cull/$resolu_cs/DSSR/$target.dssr" ];then
+	    echo    x3dna-dssr -i=$target.pdb --pair-only -o=DSSR/$target.dssr
+	    $bindir/x3dna-dssr -i=$target.pdb --pair-only -o=DSSR/$target.dssr
+	fi
+    done
+done
