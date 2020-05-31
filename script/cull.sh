@@ -13,10 +13,10 @@ echo "Make MODRES"
 echo "Convert PDB entries to fasta"
 cd       $rootdir/pdb/data/structures/all/pdb/
 mkdir -p $rootdir/cull
-#$bindir/pdb2fasta.py -dir=$rootdir/pdb/data/structures/all/pdb/ \
-    #$rootdir/pdb/derived_data/na_chain.list -suffix=.pdb.gz \
-    #-allowX=false -mol=rna -PERMISSIVE=TER | cut -f1 -d: \
-    #> $rootdir/cull/pdb_atom.fasta
+$bindir/pdb2fasta.py -dir=$rootdir/pdb/data/structures/all/pdb/ \
+    $rootdir/pdb/derived_data/na_chain.list -suffix=.pdb.gz \
+    -allowX=false -mol=rna -PERMISSIVE=TER | cut -f1 -d: \
+    > $rootdir/cull/pdb_atom.fasta
 
 echo "Cull sequence"
 $bindir/SortFastaWithResolution.py $rootdir/pdb/derived_data/index/resolu.idx $rootdir/cull/pdb_atom.fasta $rootdir/cull/pdb_atom.sort
