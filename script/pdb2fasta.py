@@ -284,6 +284,7 @@ if __name__=="__main__":
                 if not os.path.isfile(filename):
                     sys.stderr.write("ERROR! No such file %s/{%s/}%s%s\n"%(
                         prefix,f[:4],f,suffix))
+                    continue
                 sys.stdout.write(pdb2fasta(
                     filename, PERMISSIVE=PERMISSIVE, outfmt=outfmt,
                     allowX=allowX, SEQRES=SEQRES, mol=mol))
