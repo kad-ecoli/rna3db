@@ -6,7 +6,7 @@ echo "database path $rootdir"
 cd $rootdir
 
 echo "Make MODRES"
-#zcat $rootdir/pdb/data/structures/all/pdb/*gz |grep "^MODRES" > \
+#zcat $rootdir/pdb/data/structures/all/pdb/*/*.pdb.gz |grep "^MODRES" > \
      #$rootdir/pdb/derived_data/MODRES
 #$bindir/parseMODRES.py $rootdir/pdb/derived_data/MODRES $bindir/MODRES_dicts.py
 
@@ -73,7 +73,7 @@ for resolu_cs in $resolu_cs_list;do
     rm list.new
 
     echo "generate $PWD/list.atomic"
-    $bindir/AtomsPerResidue.py -dir=. list -suffix=.pdb|grep -P "^\w+\s[2]\d\.\d{2}$"|cut -f1 > list.atomic
+    $bindir/AtomsPerResidue.py -dir=./ list -suffix=.pdb|grep -P "^\w+\s[2]\d\.\d{2}$"|cut -f1 > list.atomic
 
     echo "generate $PWD/DSSR/*.dssr"
     for target in `cat list`;do

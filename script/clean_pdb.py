@@ -313,7 +313,14 @@ if __name__=="__main__":
         outfile_list=[]
         for line in fp.read().splitlines():
             target=line.split()[0]
-            infile_list.append(os.path.join(prefix,target+suffix))
+            filename=os.path.join(prefix,target+suffix)
+            if not os.path.isfile(filename):
+                filename=os.path.join(prefix,target[:4],target+suffix)
+            if not os.path.isfile(filename):
+                sys.stderr.write("ERROR! No such file %s/{%s/}%s%s\n"%(
+                    prefix,target[:4],target,suffix))
+                continue
+            infile_list.append(filename)
             outfile_list.append(os.path.join(os.getcwd(),target+outfile))
         fp.close()
     else:

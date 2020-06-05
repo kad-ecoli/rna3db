@@ -46,12 +46,19 @@ for chain in chain_list:
     dna_count=0
     rna_count=0
     filename=chain+".pdb"
-    if not os.path.isfile(filename):
-        filename=chain+".pdb.gz"
-        if not os.path.isfile(filename):
-            sys.stderr.write("ERROR! No such file %s/%s\n"%(
-                os.getcwd(),filename))
-            continue
+    pdb=chain[:4]
+    if os.path.isfile(filename+".gz"):
+        filename=     filename+".gz"
+    elif os.path.isfile(pdb+'/'+filename):
+        filename=       pdb+'/'+filename
+    elif os.path.isfile(pdb+'/'+filename+".gz"):
+        filename=       pdb+'/'+filename+".gz"
+    elif not os.path.isfile(filename):
+        sys.stderr.write("ERROR! No such file %s/{pdb/}%s{.gz}\n"%(
+            os.getcwd(),filename))
+        continue
+
+    if filename.endswith(".gz"):
         fp=gzip.open(filename,'r')
     else:
         fp=open(filename,'r')

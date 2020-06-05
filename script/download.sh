@@ -17,14 +17,18 @@ echo "Download PDB entries"
 mkdir -p $rootdir/pdb/data/structures/all/pdb/
 cd       $rootdir/pdb/data/structures/all/pdb/
 for chain in `cat $rootdir/pdb/derived_data/na_chain.list`;do
-    if [ ! -s "${chain}.pdb.gz" ];then
-        if [ ! -s "$chain.pdb" ];then
-            $bindir/fetch.py $chain
-        fi
+    pdb=`echo $chain|cut -c1-4`
+    if [ ! -s "$pdb" ];then
+        mkdir $pdb
+    fi
+    if [ ! -s "${pdb}/${chain}.pdb.gz" ];then
+        cd $rootdir/pdb/data/structures/all/pdb/$pdb
+        $bindir/fetch.py $chain
         gzip ${chain}.pdb
+        cd $rootdir/pdb/data/structures/all/pdb/
     fi
 done
-rm `ls|grep -P "^[\da-z]{4}\.pdb"` `ls|grep pdb-bundle.tar.gz`
+rm `find -type f|grep -P "/[\da-z]{4}\.pdb"` `find -type f|grep pdb-bundle.tar.gz`
 $bindir/getNAtype.py $rootdir/pdb/derived_data/na_chain.list $rootdir/pdb/derived_data/na_type.list
 $bindir/getRNAlist.py $rootdir/pdb/derived_data/na_chain.list $rootdir/pdb/derived_data/na_type.list $rootdir/pdb/derived_data/na_chain.list
 $bindir/removeDNAchain.py $rootdir/pdb/derived_data/na_type.list

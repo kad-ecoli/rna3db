@@ -278,8 +278,14 @@ if __name__=="__main__":
             target_list=fp.read().splitlines()
             fp.close()
             for f in target_list:
+                filename=os.path.join(prefix,f+suffix)
+                if not os.path.isfile(filename):
+                    filename=os.path.join(prefix,f[:4],f+suffix)
+                if not os.path.isfile(filename):
+                    sys.stderr.write("ERROR! No such file %s/{%s/}%s%s\n"%(
+                        prefix,f[:4],f,suffix))
                 sys.stdout.write(pdb2fasta(
-                    prefix+f+suffix, PERMISSIVE=PERMISSIVE, outfmt=outfmt,
+                    filename, PERMISSIVE=PERMISSIVE, outfmt=outfmt,
                     allowX=allowX, SEQRES=SEQRES, mol=mol))
         else:
             sys.stdout.write(pdb2fasta(
