@@ -15,6 +15,13 @@ This package synchronize and curate the updated set of RNA structures from the P
 [3] ``pdb/data/structures/all/pdb/`` raw PDB files.
 
 ### Update ###
+
+Structure database:
 ```bash
 script/update.sh
+```
+
+Gene Ontology annotation database (optional):
+```bash
+script/GOA.sh
 ```
