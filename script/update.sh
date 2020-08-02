@@ -5,5 +5,5 @@ rootdir=`dirname $bindir`
 echo $bindir/download.sh
 $bindir/download.sh
 
-echo $bindir/cull.sh"
+echo $bindir/cull.sh
 $bindir/cull.sh
