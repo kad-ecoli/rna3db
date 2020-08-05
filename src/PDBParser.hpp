@@ -98,7 +98,7 @@ int parse_pdb_line(const string line,ModelUnit &pep, ChainUnit &chain,
     atom.xyz[2]=atof(line.substr(46,8).c_str());
 
     int chain_index=-1;
-    for (int c=0;c<pep.chains.size();c++)
+    for (size_t c=0;c<pep.chains.size();c++)
         if (pep.chains[c].chainID_full==chain.chainID_full) chain_index=c;
     if (chain_index==-1)
     {
@@ -127,7 +127,6 @@ ModelUnit read_pdb_structure(const char *filename,
 
     string line="";
     string record_name="ATOM  ";
-    char altLoc=' ';
 
     AtomUnit atom;
     atom.xyz.assign(3,0);
@@ -172,8 +171,7 @@ ModelUnit read_pdb_structure(const char *filename,
         }
         fp_gz.close();
 
-        int i,c;
-        for (i=0;i<PDBvec.size();i++)
+        for (size_t i=0;i<PDBvec.size();i++)
         {
             PDBfile=PDBvec[i];
             redi::ipstream fp_gz2("tar -xOzf "+filename_str+' '+PDBfile);
@@ -246,7 +244,7 @@ ModelUnit read_pdb_structure(const char *filename,
 string write_pdb_structure(ChainUnit &chain,int &i)
 {
     stringstream buf;
-    int r,a;
+    size_t r,a;
 
     for (r=0;r<chain.residues.size();r++)
         for (a=0;a<chain.residues[r].atoms.size();a++)
@@ -281,7 +279,7 @@ string write_pdb_structure(ModelUnit &pep)
 {
     string txt="";
     int i=1; // atom index
-    for (int c=0;c<pep.chains.size();c++)
+    for (size_t c=0;c<pep.chains.size();c++)
         txt+=write_pdb_structure(pep.chains[c],i)+"TER\n";
     return txt;
 }
@@ -308,7 +306,7 @@ void reindex_pdb(const int startindex,ChainUnit& chain)
 
 void reindex_pdb(const int startindex,ModelUnit& pep)
 {
-    for (int c=0;c<pep.chains.size();c++) 
+    for (size_t c=0;c<pep.chains.size();c++) 
         reindex_pdb(startindex,pep.chains[c]);
 }
 
@@ -411,7 +409,7 @@ inline char aa3to1(const string resn,const int convertX=2)
 string pdb2fasta(ChainUnit& chain)
 {
     chain.sequence="";
-    int r,a;
+    size_t r,a;
     for (r=0;r<chain.residues.size();r++)
     {
         if (chain.residues[r].het==false)
@@ -461,7 +459,7 @@ string pdb2fasta(ModelUnit& pep,const string PDBid="",const int ShowSeqLen=0)
 {
     stringstream buf;
     string sequence="";
-    for (int c=0;c<pep.chains.size();c++)
+    for (size_t c=0;c<pep.chains.size();c++)
     {
         sequence=pdb2fasta(pep.chains[c]);
         buf<<'>'<<PDBid<<':'<<pep.chains[c].chainID_full;
@@ -476,7 +474,7 @@ string pdb2fasta(ModelUnit& pep,const string PDBid="",const int ShowSeqLen=0)
 int has_atom_name(ResidueUnit residue,string name=" CA ")
 {
     int atom_name_count=0;
-    for (int a=0;a<residue.atoms.size();a++)
+    for (size_t a=0;a<residue.atoms.size();a++)
         if (residue.atoms[a].name==name) atom_name_count++;
     return atom_name_count;
 }
@@ -487,7 +485,7 @@ int has_atom_name(ResidueUnit residue,string name=" CA ")
 void remove_sidechain(ResidueUnit& residue,int atomic_detail=1)
 {
     vector<AtomUnit> atoms; // list of atoms
-    for (int a=0;a<residue.atoms.size();a++)
+    for (size_t a=0;a<residue.atoms.size();a++)
     {
         if ((atomic_detail==0 && residue.atoms[a].name==" CA ")||
             (atomic_detail==1 &&(residue.atoms[a].name==" CA " ||
@@ -501,13 +499,13 @@ void remove_sidechain(ResidueUnit& residue,int atomic_detail=1)
 
 void remove_sidechain(ChainUnit& chain,int atomic_detail=1)
 {
-    for (int r=0;r<chain.residues.size();r++)
+    for (size_t r=0;r<chain.residues.size();r++)
         remove_sidechain(chain.residues[r],atomic_detail);
 }
 
 void remove_sidechain(ModelUnit& pep,int atomic_detail=1)
 {
-    for (int c=0;c<pep.chains.size();c++)
+    for (size_t c=0;c<pep.chains.size();c++)
         remove_sidechain(pep.chains[c],atomic_detail);
 }
 #endif
