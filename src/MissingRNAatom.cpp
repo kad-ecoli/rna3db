@@ -33,8 +33,7 @@ int main(int argc,char **argv)
     int atomic_detail=2;
     int allowX=0;
     ModelUnit pdb_entry=read_pdb_structure(argv[1],atomic_detail,allowX);
-    //map<string, map<string,vector<float> > >ideal_pdb=parse_ideal_pdb();
-    map<string, map<string,vector<float> > >ideal_pdb=parse_model_pdb();
+    map<string, map<string,vector<float> > >ideal_pdb=parse_ideal_pdb();
     MissingRNAatom(pdb_entry,ideal_pdb,option);
     map<string, map<string,vector<float> > >().swap(ideal_pdb);
     write_pdb_structure(outfile.c_str(),pdb_entry);
