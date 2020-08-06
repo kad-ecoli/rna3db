@@ -10,10 +10,8 @@ const char* docstring=""
 "        least three atoms\n"
 "    4 - remove non-standard atoms, fill atoms for residues with at\n"
 "        least three atoms, remove residues with less than three atoms\n"
-"\n"
-"MissingRNAatoms input.pdb output.pdb 5 template.pdb\n"
-"    remove non-standard atoms, fill atoms for residues with missing\n"
-"    atoms using corresponding atoms from template\n"
+"    5 - remove non-standard atoms, fill atoms for residues with at\n"
+"        least one atom\n"
 ;
 
 #include <iostream>
@@ -33,9 +31,9 @@ int main(int argc,char **argv)
     int atomic_detail=2;
     int allowX=0;
     ModelUnit pdb_entry=read_pdb_structure(argv[1],atomic_detail,allowX);
-    map<string, map<string,vector<float> > >ideal_pdb=parse_ideal_pdb();
-    MissingRNAatom(pdb_entry,ideal_pdb,option);
-    map<string, map<string,vector<float> > >().swap(ideal_pdb);
+    map<string, map<string,vector<float> > >ideal_rna=parse_ideal_rna();
+    MissingRNAatom(pdb_entry,ideal_rna,option);
+    map<string, map<string,vector<float> > >().swap(ideal_rna);
     write_pdb_structure(outfile.c_str(),pdb_entry);
     vector<ChainUnit>().swap(pdb_entry.chains);
     return 0;
