@@ -4,3 +4,6 @@
 # vim temporary backup
 .*.sw*
 
+
+src/MissingRNAatom
+src/NaTorsion
