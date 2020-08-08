@@ -17,9 +17,9 @@ void NaTorsion(ChainUnit& chain, vector<vector<float> >&NaTorMat,
 {
     int L=chain.residues.size();
     // default torsion angles: omega=phi=psi=360
-    vector<float> tmp_tor(17,-360.);
-    vector<float> tmp_len(35,-1.);
-    vector<float> tmp_ang(20,-360.);
+    vector<float> tmp_tor(19,-360.);
+    vector<float> tmp_len(36,-1.);
+    vector<float> tmp_ang(21,-360.);
     if (show_tor) NaTorMat.assign(L,tmp_tor);
     if (show_len) NaLenMat.assign(L,tmp_len);
     if (show_ang) NaAngMat.assign(L,tmp_ang);
@@ -44,6 +44,7 @@ void NaTorsion(ChainUnit& chain, vector<vector<float> >&NaTorMat,
     vector<float> C1(3,0.);     bool has_C1=false;
     vector<float> O4(3,0.);     bool has_O4=false;
     vector<float> O3(3,0.);     bool has_O3=false;
+    vector<float> O2(3,0.);     bool has_O2=false;
     vector<float> Nx(3,0.);     bool has_Nx=false;
     vector<float> Cx(3,0.);     bool has_Cx=false;
     // coordinates of next residue
@@ -76,6 +77,7 @@ void NaTorsion(ChainUnit& chain, vector<vector<float> >&NaTorMat,
         has_C1=false;
         has_O4=false;
         has_O3=false;
+        has_O2=false;
         has_Nx=false;
         has_Cx=false;
         has_next_P=false;
@@ -184,6 +186,11 @@ void NaTorsion(ChainUnit& chain, vector<vector<float> >&NaTorMat,
                 has_O3=true;
                 O3=chain.residues[r].atoms[a].xyz;
             }
+            else if (chain.residues[r].atoms[a].name==" O2'")
+            {
+                has_O2=true;
+                O2=chain.residues[r].atoms[a].xyz;
+            }
             else if((chain.residues[r].atoms[a].name==" N9 " &&
                     (base=='a' || base=='g')) ||
                     (chain.residues[r].atoms[a].name==" N1 " && 
@@ -237,18 +244,19 @@ void NaTorsion(ChainUnit& chain, vector<vector<float> >&NaTorMat,
             if (has_C2 && has_C3 && has_C4 && has_O4)         NaTorMat[r][3]=rad2deg(Points2Dihedral(C2,C3,C4,O4));          // v3
             if (has_C3 && has_C4 && has_O4 && has_C1)         NaTorMat[r][4]=rad2deg(Points2Dihedral(C3,C4,O4,C1));          // v4
             if (has_C5 && has_C4 && has_C3 && has_C2)         NaTorMat[r][5]=rad2deg(Points2Dihedral(C5,C4,C3,C2));          // v5
-            if (has_prev_C4 && has_P && has_C4 && has_next_P) NaTorMat[r][6]=rad2deg(Points2Dihedral(prev_C4,P,C4,next_P));  // eta
-            if (has_P && has_C4 && has_next_P && has_next_C4) NaTorMat[r][7]=rad2deg(Points2Dihedral(P,C4,next_P,next_C4));  // theta
-            if (has_prev_C1 && has_P && has_C1 && has_next_P) NaTorMat[r][8]=rad2deg(Points2Dihedral(prev_C1,P,C1,next_P));  // eta'
-            if (has_P && has_C1 && has_next_P && has_next_C1) NaTorMat[r][9]=rad2deg(Points2Dihedral(P,C1,next_P,next_C1));  // theta'
-            if (has_prev_O3 && has_P && has_O5 && has_C5)     NaTorMat[r][10]=rad2deg(Points2Dihedral(prev_O3,P,O5,C5));     // alpha
-            if (has_P  && has_O5 && has_C5 && has_C4)         NaTorMat[r][11]=rad2deg(Points2Dihedral(P,O5,C5,C4));          // beta
-            if (has_O5 && has_C5 && has_C4 && has_C3)         NaTorMat[r][12]=rad2deg(Points2Dihedral(O5,C5,C4,C3));         // gamma
-            if (has_C5 && has_C4 && has_C3 && has_O3)         NaTorMat[r][13]=rad2deg(Points2Dihedral(C5,C4,C3,O3));         // delta
-            if (has_C4 && has_C3 && has_O3 && has_next_P)     NaTorMat[r][14]=rad2deg(Points2Dihedral(C4,C3,O3,next_P));     // epsilon
-            if (has_C3 && has_O3 && has_next_P && has_next_O5)NaTorMat[r][15]=rad2deg(Points2Dihedral(C3,O3,next_P,next_O5));// zeta
-            if (has_C1 && has_C4 && has_P && has_next_P)      NaTorMat[r][16]=rad2deg(Points2Dihedral(C1,C4,P,next_P));      // i1
-            if (has_O4 && has_C1 && has_Nx && has_Cx)         NaTorMat[r][17]=rad2deg(Points2Dihedral(O4,C1,Nx,Cx));         // chi
+            if (has_C4 && has_C3 && has_C2 && has_O2)         NaTorMat[r][6]=rad2deg(Points2Dihedral(C4,C3,C2,O2));          // v6
+            if (has_prev_C4 && has_P && has_C4 && has_next_P) NaTorMat[r][7]=rad2deg(Points2Dihedral(prev_C4,P,C4,next_P));  // eta
+            if (has_P && has_C4 && has_next_P && has_next_C4) NaTorMat[r][8]=rad2deg(Points2Dihedral(P,C4,next_P,next_C4));  // theta
+            if (has_prev_C1 && has_P && has_C1 && has_next_P) NaTorMat[r][9]=rad2deg(Points2Dihedral(prev_C1,P,C1,next_P));  // eta'
+            if (has_P && has_C1 && has_next_P && has_next_C1) NaTorMat[r][10]=rad2deg(Points2Dihedral(P,C1,next_P,next_C1));  // theta'
+            if (has_prev_O3 && has_P && has_O5 && has_C5)     NaTorMat[r][11]=rad2deg(Points2Dihedral(prev_O3,P,O5,C5));     // alpha
+            if (has_P  && has_O5 && has_C5 && has_C4)         NaTorMat[r][12]=rad2deg(Points2Dihedral(P,O5,C5,C4));          // beta
+            if (has_O5 && has_C5 && has_C4 && has_C3)         NaTorMat[r][13]=rad2deg(Points2Dihedral(O5,C5,C4,C3));         // gamma
+            if (has_C5 && has_C4 && has_C3 && has_O3)         NaTorMat[r][14]=rad2deg(Points2Dihedral(C5,C4,C3,O3));         // delta
+            if (has_C4 && has_C3 && has_O3 && has_next_P)     NaTorMat[r][15]=rad2deg(Points2Dihedral(C4,C3,O3,next_P));     // epsilon
+            if (has_C3 && has_O3 && has_next_P && has_next_O5)NaTorMat[r][16]=rad2deg(Points2Dihedral(C3,O3,next_P,next_O5));// zeta
+            if (has_C1 && has_C4 && has_P && has_next_P)      NaTorMat[r][17]=rad2deg(Points2Dihedral(C1,C4,P,next_P));      // i1
+            if (has_O4 && has_C1 && has_Nx && has_Cx)         NaTorMat[r][18]=rad2deg(Points2Dihedral(O4,C1,Nx,Cx));         // chi
         }
         if (show_len)
         {
@@ -285,8 +293,9 @@ void NaTorsion(ChainUnit& chain, vector<vector<float> >&NaTorMat,
             if (has_C2      && has_C1) NaLenMat[r][30]=Points2Distance(C2,C1);      // C2'-C1'
             if (has_C4      && has_O4) NaLenMat[r][31]=Points2Distance(C4,O4);      // C4'-O4'
             if (has_O4      && has_C1) NaLenMat[r][32]=Points2Distance(O4,C1);      // O4'-O1'
-            if (has_C1      && has_Nx) NaLenMat[r][33]=Points2Distance(C1,Nx);      // C1'-Nx
-            if (has_Nx      && has_Cx) NaLenMat[r][34]=Points2Distance(Nx,Cx);      // N-C
+            if (has_C2      && has_O2) NaLenMat[r][33]=Points2Distance(C2,O2);      // C2'-O2'
+            if (has_C1      && has_Nx) NaLenMat[r][34]=Points2Distance(C1,Nx);      // C1'-Nx
+            if (has_Nx      && has_Cx) NaLenMat[r][35]=Points2Distance(Nx,Cx);      // N-C
         }
         if (show_ang)
         {
@@ -308,8 +317,9 @@ void NaTorsion(ChainUnit& chain, vector<vector<float> >&NaTorMat,
             if (has_C5 && has_C4 && has_O4)     NaAngMat[r][15]=rad2deg(Points2Angle(C5,C4,O4));     // C5'-C4'-O4'
             if (has_C4 && has_O4 && has_C1)     NaAngMat[r][16]=rad2deg(Points2Angle(C4,O4,C1));     // C4'-O4'-C1'
             if (has_O4 && has_C1 && has_C2)     NaAngMat[r][17]=rad2deg(Points2Angle(O4,C1,C2));     // O4'-C1'-C2'
-            if (has_O4 && has_C1 && has_Nx)     NaAngMat[r][18]=rad2deg(Points2Angle(O4,C1,Nx));     // O4'-C1'-Nx
-            if (has_C1 && has_Nx && has_Cx)     NaAngMat[r][19]=rad2deg(Points2Angle(C1,Nx,Cx));     // C1'-Nx-Cx
+            if (has_O2 && has_C2 && has_C3)     NaAngMat[r][18]=rad2deg(Points2Angle(O2,C2,C3));     // O2'-C2'-C3'
+            if (has_O4 && has_C1 && has_Nx)     NaAngMat[r][19]=rad2deg(Points2Angle(O4,C1,Nx));     // O4'-C1'-Nx
+            if (has_C1 && has_Nx && has_Cx)     NaAngMat[r][20]=rad2deg(Points2Angle(C1,Nx,Cx));     // C1'-Nx-Cx
         }
     }
     
