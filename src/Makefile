@@ -2,15 +2,18 @@ CC=g++
 CFLAGS=-O3
 LDFLAGS=-static
 
-PROG=NaTorsion MissingRNAatom
-HEADER=PDBParser.hpp pstream.h
+PROG=NaTorsion MissingRNAatom BPtorsion
+HEADER=PDBParser.hpp pstream.h GeometryTools.hpp
 
 all: ${PROG}
 
-NaTorsion: NaTorsion.cpp NaTorsion.hpp GeometryTools.hpp ${HEADER}
+NaTorsion: NaTorsion.cpp NaTorsion.hpp ${HEADER}
 	${CC} ${CFLAGS} $@.cpp -o $@ ${LDFLAGS}
 
-MissingRNAatom: MissingRNAatom.cpp MissingRNAatom.hpp GeometryTools.hpp ${HEADER}
+BPtorsion: BPtorsion.cpp BPtorsion.hpp ${HEADER}
+	${CC} ${CFLAGS} $@.cpp -o $@ ${LDFLAGS}
+
+MissingRNAatom: MissingRNAatom.cpp MissingRNAatom.hpp Superpose.hpp IdealRNA.hpp ${HEADER}
 	${CC} ${CFLAGS} $@.cpp -o $@ ${LDFLAGS}
 
 install: ${PROG}

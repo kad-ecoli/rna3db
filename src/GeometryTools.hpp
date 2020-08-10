@@ -240,21 +240,37 @@ inline float Points2Angle(const vector<float> &c1, const vector<float> &c2, cons
    
    alpha=(a+b-c)/(2*sqrt(a*b));
    
-   if (alpha>1 && alpha<1+Extra)
-   {
-      alpha=1;
-   }
-   else if(alpha<-1 && alpha>-1-Extra)
-   {
-      alpha=-1;
-   }
-   else if(alpha>1+Extra || alpha<-1-Extra)
-   {
-      cerr<<"Error, float Points2Angle()\n";
-      exit(0);
-   }
-   
+   if(alpha>1+Extra || alpha<-1-Extra)
+      cerr<<"Warning, float Points2Angle()\n";
+
+   if (alpha>1) alpha=1;
+   else if(alpha<-1) alpha=-1;
    return acos(alpha);
+}
+
+//Return the angle of <c1-c2,c3-c4>. Unit: radian
+inline float Points4Angle(const vector<float> &c1, const vector<float> &c2, const vector<float> &c3, const vector<float> &c4)
+{
+    float a, b, a1, a2, a3, b1, b2, b3, alpha;
+   
+    a1=c2[0]-c1[0];
+    a2=c2[1]-c1[1];
+    a3=c2[2]-c1[2];
+    a = a1*a1 + a2*a2 + a3*a3;
+   
+    b1=c4[0]-c3[0];
+    b2=c4[1]-c3[1];
+    b3=c4[2]-c3[2];
+    b = b1*b1 + b2*b2 + b3*b3;
+   
+    alpha=(a1*b1+a2*b2+a3*b3)/sqrt(a*b);
+   
+    if(alpha>1+Extra || alpha<-1-Extra)
+        cerr<<"Error, float Points2Angle()\n";
+   
+    if (alpha>1)      alpha=1;
+    else if(alpha<-1) alpha=-1;
+    return acos(alpha);
 }
 
 /************************Points to Dihedral************************/

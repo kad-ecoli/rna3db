@@ -1,6 +1,6 @@
 /* calculate backbone torsion angles (omega, psi, phi, kappa, alpha) */
-#ifndef BackboneTorsion_HPP
-#define BackboneTorsion_HPP 1
+#ifndef NaTorsion_HPP
+#define NaTorsion_HPP 1
 #include <cstring>
 #include "PDBParser.hpp"
 #include "GeometryTools.hpp"
