@@ -80,6 +80,24 @@ bool checkMissingRNAatom(ResidueUnit &residue,
     return true;
 }
 
+size_t countUniqAtom(vector<vector<float> >&xyz_list2)
+{
+    size_t atomNum=xyz_list2.size();
+    float Extra=1.0e-6;
+    size_t dup;
+    size_t a,b;
+    for (a=1;a<xyz_list2.size();a++)
+    {
+        dup=0;
+        for (b=0;b<a;b++)
+            if (abs(xyz_list2[a][0]-xyz_list2[b][0])+
+                abs(xyz_list2[a][1]-xyz_list2[b][1])+
+                abs(xyz_list2[a][2]-xyz_list2[b][2])<Extra) dup++;
+        if (dup) atomNum--;
+    }
+    return atomNum;
+}
+
 void fillMissingRNAatom(ResidueUnit &residue,
     map<string, map<string,vector<float> > >&ideal_rna,
     vector<string>missing_atom_vec)
@@ -90,7 +108,7 @@ void fillMissingRNAatom(ResidueUnit &residue,
     vector<vector<float> > RotMatix;  // U
     vector<float> TranVect;  // t
 
-    size_t a;
+    size_t a,b;
     for (a=0;a<residue.atoms.size();a++)
     {
         xyz_list1[a][0]=ideal_rna[residue.resn][residue.atoms[a].name][0];
@@ -102,40 +120,33 @@ void fillMissingRNAatom(ResidueUnit &residue,
         xyz_list2[a][2]=residue.atoms[a].xyz[2];
     }
 
-    if (residue.atoms.size()>=3)
+    size_t atomNum=countUniqAtom(xyz_list2);
+    if (atomNum<xyz_list2.size())
+        cerr<<"duplicated coordinate in "
+            <<residue.resn<<residue.resi<<residue.icode<<endl;
+
+    //if (residue.atoms.size()>=3)
+    if (atomNum>=3)
         RotateCoor(xyz_list1,xyz_list2, RotMatix, TranVect);
     else
     {
+        cerr<<"too few ("<<atomNum<<") unique atoms to fill "
+            <<residue.resn<<residue.resi<<residue.icode<<endl;
         RotMatix.push_back(tmp);
         RotMatix.push_back(tmp);
         RotMatix.push_back(tmp);
         RotMatix[0][0]=RotMatix[1][1]=RotMatix[2][2]=1;
-
+        
         TranVect=tmp;
-        for (a=0;a<residue.atoms.size();a++)
+        for (a=0;a<xyz_list1.size();a++)
         {
-            TranVect[0]+=xyz_list1[a][0];
-            TranVect[1]+=xyz_list1[a][1];
-            TranVect[2]+=xyz_list1[a][2];
+            TranVect[0]+=xyz_list2[a][0]-xyz_list1[a][0];
+            TranVect[1]+=xyz_list2[a][1]-xyz_list1[a][1];
+            TranVect[2]+=xyz_list2[a][2]-xyz_list1[a][2];
         }
-        xyz_list1[0][0]=TranVect[0]/residue.atoms.size();
-        xyz_list1[0][1]=TranVect[1]/residue.atoms.size();
-        xyz_list1[0][2]=TranVect[2]/residue.atoms.size();
-        
-        TranVect[0]=TranVect[1]=TranVect[2]=0;
-        for (a=0;a<residue.atoms.size();a++)
-        {
-            TranVect[0]+=xyz_list2[a][0];
-            TranVect[1]+=xyz_list2[a][1];
-            TranVect[2]+=xyz_list2[a][2];
-        }
-        xyz_list2[0][0]=TranVect[0]/residue.atoms.size();
-        xyz_list2[0][1]=TranVect[1]/residue.atoms.size();
-        xyz_list2[0][2]=TranVect[2]/residue.atoms.size();
-        
-        TranVect[0]=xyz_list2[0][0]-xyz_list1[0][0];
-        TranVect[1]=xyz_list2[0][1]-xyz_list1[0][1];
-        TranVect[2]=xyz_list2[0][2]-xyz_list1[0][2];
+        TranVect[0]/=xyz_list1.size();
+        TranVect[1]/=xyz_list1.size();
+        TranVect[2]/=xyz_list1.size();
     }
     
     for (a=0;a<residue.atoms.size();a++)
@@ -177,6 +188,7 @@ void fillMissingRNAatom(size_t r, ChainUnit &chain, ChainUnit &fill_chain,
     size_t a,a0,a1,a2;
     string key,key0,key1,key2;
     size_t r0,r1,r2;
+    size_t prevAtomNum=0;
     if (r==0) 
     {
         r0=0;
@@ -188,12 +200,14 @@ void fillMissingRNAatom(size_t r, ChainUnit &chain, ChainUnit &fill_chain,
         r0=r-2;
         r1=r-1;
         r2=r;
+        prevAtomNum=chain.residues[r0].atoms.size()+chain.residues[r1].atoms.size();
     }
     else
     {
         r0=r-1;
         r1=r;
         r2=r+1;
+        prevAtomNum=chain.residues[r0].atoms.size();
     }
     key=chain.residues[r0].resn+chain.residues[r1].resn+chain.residues[r2].resn;
     key0=key+'0';
@@ -241,16 +255,45 @@ void fillMissingRNAatom(size_t r, ChainUnit &chain, ChainUnit &fill_chain,
         xyz_list2[a][2]=chain.residues[r2].atoms[a2].xyz[2];
         a++;
     }
-    RotateCoor(xyz_list1,xyz_list2, RotMatix, TranVect);
+
+    size_t atomNum=countUniqAtom(xyz_list2);
+    if (atomNum<xyz_list2.size())
+        cerr<<"duplicated coordinate when reconstructing "
+            <<chain.residues[r].resn<<chain.residues[r].resi
+            <<chain.residues[r].icode<<endl;
+
+    if (atomNum>=3)
+        RotateCoor(xyz_list1,xyz_list2, RotMatix, TranVect);
+    else
+    {
+        cerr<<"too few ("<<atomNum<<") unique atoms to reconstruct "
+            <<chain.residues[r].resn<<chain.residues[r].resi
+            <<chain.residues[r].icode<<endl;
+        RotMatix.push_back(tmp);
+        RotMatix.push_back(tmp);
+        RotMatix.push_back(tmp);
+        RotMatix[0][0]=RotMatix[1][1]=RotMatix[2][2]=1;
+        
+        TranVect=tmp;
+        for (a=0;a<xyz_list1.size();a++)
+        {
+            TranVect[0]+=xyz_list2[a][0]-xyz_list1[a][0];
+            TranVect[1]+=xyz_list2[a][1]-xyz_list1[a][1];
+            TranVect[2]+=xyz_list2[a][2]-xyz_list1[a][2];
+        }
+        TranVect[0]/=xyz_list1.size();
+        TranVect[1]/=xyz_list1.size();
+        TranVect[2]/=xyz_list1.size();
+    }
     
     /* adjust TranVect */
     for (a=0;a<chain.residues[r].atoms.size();a++)
     {
         ChangeCoor(ideal_rna[key][chain.residues[r].atoms[a].name],
-            RotMatix,TranVect,xyz_list1[0]);
-        tmp[0]+=(chain.residues[r].atoms[a].xyz[0]-xyz_list1[a][0]);
-        tmp[1]+=(chain.residues[r].atoms[a].xyz[1]-xyz_list1[a][1]);
-        tmp[2]+=(chain.residues[r].atoms[a].xyz[2]-xyz_list1[a][2]);
+            RotMatix,TranVect,xyz_list1[a+prevAtomNum]);
+        tmp[0]+=(chain.residues[r].atoms[a].xyz[0]-xyz_list1[a+prevAtomNum][0]);
+        tmp[1]+=(chain.residues[r].atoms[a].xyz[1]-xyz_list1[a+prevAtomNum][1]);
+        tmp[2]+=(chain.residues[r].atoms[a].xyz[2]-xyz_list1[a+prevAtomNum][2]);
     }
     TranVect[0]+=tmp[0]/chain.residues[r].atoms.size();
     TranVect[1]+=tmp[1]/chain.residues[r].atoms.size();
