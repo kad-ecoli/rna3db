@@ -107,12 +107,7 @@ size_t read_dssr_base_pair(vector<char>&chain1_list, vector<char>&chain2_list,
             resn2_list.push_back("  "+nt2.substr(0,1));
             resi2_list.push_back(atoi(nt2.substr(1).c_str()));
         }
-
         name_list.push_back(name);
-
-        //cout<<"nt1="<<nt1<<";nt2="<<nt2<<";name="<<name<<'.'<<endl;
-        //cout<<chain1_list.back()<<'.'<<resn1_list.back()<<resi1_list.back()<<icode1_list.back()<<';'
-            //<<chain2_list.back()<<'.'<<resn2_list.back()<<resi2_list.back()<<icode2_list.back()<<';'<<name<<endl;
     }
     if (!use_stdin) fp.close();
 
@@ -121,8 +116,6 @@ size_t read_dssr_base_pair(vector<char>&chain1_list, vector<char>&chain2_list,
     nt1.clear();
     nt2.clear();
     name.clear();
-    //resn1.clear();
-    //resn2.clear();
     vector<string>().swap(bp_type_vec);
     return BPcount;
 }
@@ -135,9 +128,9 @@ void BPtorsion(const vector<char>&chain1_list, const vector<char>&chain2_list,
     const bool show_ang, vector<vector<float> >&BPtorMat,
     vector<vector<float> >&BPlenMat, vector<vector<float> >&BPangMat)
 {
-    vector<float> tmp_tor(21,-360.);
+    vector<float> tmp_tor(20,-360.);
     vector<float> tmp_len(10,-1.);
-    vector<float> tmp_ang(21,-360.);
+    vector<float> tmp_ang(20,-360.);
 
     size_t BPcount=chain1_list.size();
 
@@ -573,27 +566,26 @@ void BPtorsion(const vector<char>&chain1_list, const vector<char>&chain2_list,
 
         if (show_tor)
         {
-            if (has_prev_Pi  && has_Pi  && has_Pj  && has_next_Pj ) BPtorMat[bp][0] =rad2deg(Points2Dihedral( prev_Pi, Pi, Pj, next_Pj)); // Pm:  P[i-1]-P[i]-P[j]-P[j+1]
-            if (has_next_Pi  && has_Pi  && has_Pj  && has_prev_Pj ) BPtorMat[bp][1] =rad2deg(Points2Dihedral( next_Pi, Pi, Pj, prev_Pj)); // Pp:  P[i+1]-P[i]-P[j]-P[j-1]
-            if (has_prev_O5i && has_O5i && has_O5j && has_next_O5j) BPtorMat[bp][2] =rad2deg(Points2Dihedral(prev_O5i,O5i,O5j,next_O5j)); // O5m: O5'[i-1]-O5'[i]-O5'[j]-O5'[j+1]
-            if (has_next_O5i && has_O5i && has_O5j && has_prev_O5j) BPtorMat[bp][3] =rad2deg(Points2Dihedral(next_O5i,O5i,O5j,prev_O5j)); // O5p: O5'[i+1]-O5'[i]-O5'[j]-O5'[j-1]
-            if (has_prev_C5i && has_C5i && has_C5j && has_next_C5j) BPtorMat[bp][4] =rad2deg(Points2Dihedral(prev_C5i,C5i,C5j,next_C5j)); // C5m: C5'[i-1]-C5'[i]-C5'[j]-C5'[j+1]
-            if (has_next_C5i && has_C5i && has_C5j && has_prev_C5j) BPtorMat[bp][5] =rad2deg(Points2Dihedral(next_C5i,C5i,C5j,prev_C5j)); // C5p: C5'[i+1]-C5'[i]-C5'[j]-C5'[j-1]
-            if (has_prev_C4i && has_C4i && has_C4j && has_next_C4j) BPtorMat[bp][6] =rad2deg(Points2Dihedral(prev_C4i,C4i,C4j,next_C4j)); // C4m: C4'[i-1]-C4'[i]-C4'[j]-C4'[j+1]
-            if (has_next_C4i && has_C4i && has_C4j && has_prev_C4j) BPtorMat[bp][7] =rad2deg(Points2Dihedral(next_C4i,C4i,C4j,prev_C4j)); // C4p: C4'[i+1]-C4'[i]-C4'[j]-C4'[j-1]
-            if (has_prev_C3i && has_C3i && has_C3j && has_next_C3j) BPtorMat[bp][8] =rad2deg(Points2Dihedral(prev_C3i,C3i,C3j,next_C3j)); // C3m: C3'[i-1]-C3'[i]-C3'[j]-C3'[j+1]
-            if (has_next_C3i && has_C3i && has_C3j && has_prev_C3j) BPtorMat[bp][9] =rad2deg(Points2Dihedral(next_C3i,C3i,C3j,prev_C3j)); // C3p: C3'[i+1]-C3'[i]-C3'[j]-C3'[j-1]
-            if (has_prev_C2i && has_C2i && has_C2j && has_next_C2j) BPtorMat[bp][10]=rad2deg(Points2Dihedral(prev_C2i,C2i,C2j,next_C2j)); // C2m: C2'[i-1]-C2'[i]-C2'[j]-C2'[j+1]
-            if (has_next_C2i && has_C2i && has_C2j && has_prev_C2j) BPtorMat[bp][11]=rad2deg(Points2Dihedral(next_C2i,C2i,C2j,prev_C2j)); // C2p: C2'[i+1]-C2'[i]-C2'[j]-C2'[j-1]
-            if (has_prev_C1i && has_C1i && has_C1j && has_next_C1j) BPtorMat[bp][12]=rad2deg(Points2Dihedral(prev_C1i,C1i,C1j,next_C1j)); // C1m: C1'[i-1]-C1'[i]-C1'[j]-C1'[j+1]
-            if (has_next_C1i && has_C1i && has_C1j && has_prev_C1j) BPtorMat[bp][13]=rad2deg(Points2Dihedral(next_C1i,C1i,C1j,prev_C1j)); // C1p: C1'[i+1]-C1'[i]-C1'[j]-C1'[j-1]
-            if (has_prev_O4i && has_O4i && has_O4j && has_next_O4j) BPtorMat[bp][14]=rad2deg(Points2Dihedral(prev_O4i,O4i,O4j,next_O4j)); // O4m: O4'[i-1]-O4'[i]-O4'[j]-O4'[j+1]
-            if (has_next_O4i && has_O4i && has_O4j && has_prev_O4j) BPtorMat[bp][15]=rad2deg(Points2Dihedral(next_O4i,O4i,O4j,prev_O4j)); // O4p: O4'[i+1]-O4'[i]-O4'[j]-O4'[j-1]
-            if (has_prev_O3i && has_O3i && has_O3j && has_next_O3j) BPtorMat[bp][16]=rad2deg(Points2Dihedral(prev_O3i,O3i,O3j,next_O3j)); // O3m: O3'[i-1]-O3'[i]-O3'[j]-O3'[j+1]
-            if (has_next_O3i && has_O3i && has_O3j && has_prev_O3j) BPtorMat[bp][17]=rad2deg(Points2Dihedral(next_O3i,O3i,O3j,prev_O3j)); // O3p: O3'[i+1]-O3'[i]-O3'[j]-O3'[j-1]
+            if (has_prev_Pi  && has_Pi  && has_Pj  && has_prev_Pj ) BPtorMat[bp][0] =rad2deg(Points2Dihedral( prev_Pi, Pi, Pj, prev_Pj)); // Pm:  P[i-1]-P[i]-P[j]-P[j+1]
+            if (has_next_Pi  && has_Pi  && has_Pj  && has_next_Pj ) BPtorMat[bp][1] =rad2deg(Points2Dihedral( next_Pi, Pi, Pj, next_Pj)); // Pp:  P[i+1]-P[i]-P[j]-P[j-1]
+            if (has_prev_O5i && has_O5i && has_O5j && has_prev_O5j) BPtorMat[bp][2] =rad2deg(Points2Dihedral(prev_O5i,O5i,O5j,prev_O5j)); // O5m: O5'[i-1]-O5'[i]-O5'[j]-O5'[j+1]
+            if (has_next_O5i && has_O5i && has_O5j && has_next_O5j) BPtorMat[bp][3] =rad2deg(Points2Dihedral(next_O5i,O5i,O5j,next_O5j)); // O5p: O5'[i+1]-O5'[i]-O5'[j]-O5'[j-1]
+            if (has_prev_C5i && has_C5i && has_C5j && has_prev_C5j) BPtorMat[bp][4] =rad2deg(Points2Dihedral(prev_C5i,C5i,C5j,prev_C5j)); // C5m: C5'[i-1]-C5'[i]-C5'[j]-C5'[j+1]
+            if (has_next_C5i && has_C5i && has_C5j && has_next_C5j) BPtorMat[bp][5] =rad2deg(Points2Dihedral(next_C5i,C5i,C5j,next_C5j)); // C5p: C5'[i+1]-C5'[i]-C5'[j]-C5'[j-1]
+            if (has_prev_C4i && has_C4i && has_C4j && has_prev_C4j) BPtorMat[bp][6] =rad2deg(Points2Dihedral(prev_C4i,C4i,C4j,prev_C4j)); // C4m: C4'[i-1]-C4'[i]-C4'[j]-C4'[j+1]
+            if (has_next_C4i && has_C4i && has_C4j && has_next_C4j) BPtorMat[bp][7] =rad2deg(Points2Dihedral(next_C4i,C4i,C4j,next_C4j)); // C4p: C4'[i+1]-C4'[i]-C4'[j]-C4'[j-1]
+            if (has_prev_C3i && has_C3i && has_C3j && has_prev_C3j) BPtorMat[bp][8] =rad2deg(Points2Dihedral(prev_C3i,C3i,C3j,prev_C3j)); // C3m: C3'[i-1]-C3'[i]-C3'[j]-C3'[j+1]
+            if (has_next_C3i && has_C3i && has_C3j && has_next_C3j) BPtorMat[bp][9] =rad2deg(Points2Dihedral(next_C3i,C3i,C3j,next_C3j)); // C3p: C3'[i+1]-C3'[i]-C3'[j]-C3'[j-1]
+            if (has_prev_C2i && has_C2i && has_C2j && has_prev_C2j) BPtorMat[bp][10]=rad2deg(Points2Dihedral(prev_C2i,C2i,C2j,prev_C2j)); // C2m: C2'[i-1]-C2'[i]-C2'[j]-C2'[j+1]
+            if (has_next_C2i && has_C2i && has_C2j && has_next_C2j) BPtorMat[bp][11]=rad2deg(Points2Dihedral(next_C2i,C2i,C2j,next_C2j)); // C2p: C2'[i+1]-C2'[i]-C2'[j]-C2'[j-1]
+            if (has_prev_C1i && has_C1i && has_C1j && has_prev_C1j) BPtorMat[bp][12]=rad2deg(Points2Dihedral(prev_C1i,C1i,C1j,prev_C1j)); // C1m: C1'[i-1]-C1'[i]-C1'[j]-C1'[j+1]
+            if (has_next_C1i && has_C1i && has_C1j && has_next_C1j) BPtorMat[bp][13]=rad2deg(Points2Dihedral(next_C1i,C1i,C1j,next_C1j)); // C1p: C1'[i+1]-C1'[i]-C1'[j]-C1'[j-1]
+            if (has_prev_O4i && has_O4i && has_O4j && has_prev_O4j) BPtorMat[bp][14]=rad2deg(Points2Dihedral(prev_O4i,O4i,O4j,prev_O4j)); // O4m: O4'[i-1]-O4'[i]-O4'[j]-O4'[j+1]
+            if (has_next_O4i && has_O4i && has_O4j && has_next_O4j) BPtorMat[bp][15]=rad2deg(Points2Dihedral(next_O4i,O4i,O4j,next_O4j)); // O4p: O4'[i+1]-O4'[i]-O4'[j]-O4'[j-1]
+            if (has_prev_O3i && has_O3i && has_O3j && has_prev_O3j) BPtorMat[bp][16]=rad2deg(Points2Dihedral(prev_O3i,O3i,O3j,prev_O3j)); // O3m: O3'[i-1]-O3'[i]-O3'[j]-O3'[j+1]
+            if (has_next_O3i && has_O3i && has_O3j && has_next_O3j) BPtorMat[bp][17]=rad2deg(Points2Dihedral(next_O3i,O3i,O3j,next_O3j)); // O3p: O3'[i+1]-O3'[i]-O3'[j]-O3'[j-1]
             if (has_Pi       && has_C4i && has_C4j && has_Pj      ) BPtorMat[bp][18]=rad2deg(Points2Dihedral(      Pi,C4i,C4j,      Pj)); // P44P: P[i]-C4'[i]-C4'[j]-P[j]
             if (has_C4i      && has_C1i && has_C1j && has_C4j     ) BPtorMat[bp][19]=rad2deg(Points2Dihedral(     C4i,C1i,C1j,     C4j)); // C4114C: C4'[i]-C1'[i]-C1'[j]-C4'[j]
-            if (has_next_Pi  && has_Pi  && has_Pj  && has_next_Pj ) BPtorMat[bp][20]=rad2deg(Points2Dihedral( next_Pi, Pi, Pj, next_Pj)); // PppP: P[i+1]-P[i]-P[j]-P[j+1]
         }
         if (show_len)
         {
@@ -630,7 +622,6 @@ void BPtorsion(const vector<char>&chain1_list, const vector<char>&chain2_list,
             if (has_next_O3i && has_O3i && has_prev_O3j && has_O3j) BPangMat[bp][17]=rad2deg(Points4Angle(next_O3i,O3i,prev_O3j,O3j)); // aO3p: <O3'[i+1]O3'[i],O3'[j-1]O3'[j]> 
             if (has_Pi       && has_C4i && has_Pj       && has_C4j) BPangMat[bp][18]=rad2deg(Points4Angle(      Pi,C4i,      Pj,C4j)); // aPC:      <P[i]C4'[i],P[j]C4'[j]>
             if (has_C4i      && has_C1i && has_C4j      && has_C1j) BPangMat[bp][19]=rad2deg(Points4Angle(     C4i,C1i,     C4j,C1j)); // aCC:    <C4'[i]C1'[i],C4'[j]C1'[j]>
-            if (has_next_Pi  && has_Pi  && has_next_Pj  && has_Pj ) BPangMat[bp][20]=rad2deg(Points4Angle( next_Pi, Pi, next_Pj, Pj)); //aPppP:     <P[i+1]P[i],P[j+1]P[j]>
         }
     }
 

@@ -320,7 +320,7 @@ inline bool bp_ang_score(
 }
 
 void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
-    vector<pair<float,vector<string> > >&bp_vec)
+    vector<pair<float,vector<string> > >&bp_vec, const bool interchain)
 {
     /* pre-trained parameters */
     float weight_tor=1;
@@ -585,7 +585,7 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
             }
 
 
-            for (c2=c1; c2<pdb_entry.chains.size(); c2++)
+            for (c2=c1+interchain; c2<pdb_entry.chains.size(); c2++)
             {
                 for (r2=(c1==c2)*(r1+1); r2<pdb_entry.chains[c2].residues.size(); r2++)
                 {

@@ -4,7 +4,23 @@
 # vim temporary backup
 .*.sw*
 
+ligand-expo/A/
+ligand-expo/C/
+ligand-expo/DA/
+ligand-expo/DC/
+ligand-expo/DG/
+ligand-expo/DT/
+ligand-expo/G/
+ligand-expo/U/
 
 src/MissingRNAatom
 src/NaTorsion
 src/BPtorsion
+src/cssr
+src/*.pdb
+src/*.dssr
+
+stat/*png
+stat/*gz
+stat/*txt
+stat/*hpp

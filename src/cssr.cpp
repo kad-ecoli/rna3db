@@ -2,10 +2,11 @@ const char* docstring=""
 "cssr cg.pdb [outfmt] [atom]\n"
 "    secondary structure assignment for coarse grain model\n"
 "\n"
-"outfmt: output format\n"
+"outfmt: output format. can be added together\n"
 "    1 - dot bracket format\n"
 "    2 - (default) DSSR format\n"
 "    4 - confidence score\n"
+"    8 - inter-chain base pairs only\n"
 "atom: atom used for assignment. default is all the following atoms:\n"
 "    \" P  \", \" O5'\", \" O4'\", \" O3'\", \" C5'\", \" C4'\", \" C3'\", \" C2'\", \" C1'\"\n"
 "    and N (N9 for a/g; N1 for c/t/u)\n"
@@ -28,7 +29,8 @@ int main(int argc,char **argv)
     
     bool show_dot    =(outfmt%2==1); outfmt/=2;
     bool show_dssr   =(outfmt%2==1); outfmt/=2;
-    bool show_conf   =(outfmt%2==1);
+    bool show_conf   =(outfmt%2==1); outfmt/=2;
+    bool interchain  =(outfmt%2==1);
     
     int atomic_detail=2;
     int allowX       =1; // only allow ATOM and MSE
@@ -44,7 +46,7 @@ int main(int argc,char **argv)
 
     vector<string> res_str_vec;
     vector<pair<float,vector<string> > > bp_vec;
-    cssr(pdb_entry, res_str_vec, bp_vec);
+    cssr(pdb_entry, res_str_vec, bp_vec, interchain);
 
     /* output */
     size_t bp;
