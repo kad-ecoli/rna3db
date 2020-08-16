@@ -379,11 +379,13 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
     /* loop over base pairs */
     for (c1=0; c1<pdb_entry.chains.size(); c1++)
     {
-        cerr<<">chain_"<<c1<<':'<<pdb_entry.chains[c1].chainID<<'\t'
-            <<pdb_entry.chains[c1].residues.size()<<endl;
+        //cerr<<">chain_"<<c1<<':'<<pdb_entry.chains[c1].chainID<<'\t'
+            //<<pdb_entry.chains[c1].residues.size()<<endl;
         for (r1=0; r1<pdb_entry.chains[c1].residues.size(); r1++)
         {
             base1=pdb_entry.chains[c1].residues[r1].resn[2];
+            //cerr<<base1;
+            if (!pdb_entry.chains[c1].residues[r1].atoms.size()) continue;
             if ((chainID=pdb_entry.chains[c1].chainID)!=' ') 
                 ss<<chainID<<".";
             ss<<base1<<pdb_entry.chains[c1].residues[r1].resi;
@@ -392,7 +394,6 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
             tmp_bp[0]=ss.str();
             res_str_vec.push_back(tmp_bp[0]);
             ss.str(string());
-            cerr<<base1;
 
             has_prev_Pi  = false;
             has_prev_O5i = false;
@@ -589,6 +590,11 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
             {
                 for (r2=(c1==c2)*(r1+1); r2<pdb_entry.chains[c2].residues.size(); r2++)
                 {
+                    if (!pdb_entry.chains[c2].residues[r2].atoms.size() ||
+                        Points2Distance2(
+                        pdb_entry.chains[c1].residues[r1].atoms[0].xyz,
+                        pdb_entry.chains[c2].residues[r2].atoms[0].xyz)>600)
+                        continue;
                     base2=pdb_entry.chains[c2].residues[r2].resn[2];
                     if ((base1=='A' &&(base2=='U' || base2=='T')) ||
                         (base1=='C' && base2=='G')||
@@ -841,16 +847,17 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
                         if (has_next_C1i && has_C1i && has_prev_C1j && has_C1j) successtest+=bp_ang_score(next_C1i,C1i,prev_C1j,C1j, aC1p_mu, aC1p_sd, tol, weight_ang, nominator, denominator); // aC1p: <C1'[i+1]C1'[i],C1'[j-1]C1'[j]> 
                         if (has_next_O4i && has_O4i && has_prev_O4j && has_O4j) successtest+=bp_ang_score(next_O4i,O4i,prev_O4j,O4j, aO4p_mu, aO4p_sd, tol, weight_ang, nominator, denominator); // aO4p: <O4'[i+1]O4'[i],O4'[j-1]O4'[j]> 
                         if (has_next_O3i && has_O3i && has_prev_O3j && has_O3j) successtest+=bp_ang_score(next_O3i,O3i,prev_O3j,O3j, aO3p_mu, aO3p_sd, tol, weight_ang, nominator, denominator); // aO3p: <O3'[i+1]O3'[i],O3'[j-1]O3'[j]> 
-                        if (has_C4i      && has_C1i && has_C4j      && has_C1j) successtest+=bp_ang_score(     C4i,C1i,     C4j,C1j,  aCC_mu,  aCC_sd, tol, weight_ang, nominator, denominator); //  aCC:    <C4'[i]C1'[i],C4'[j]C1'[j]>
-                        //{
-                            //ang=rad2deg(Points4Angle(C4i,C1i,C4j,C1j));
-                            //if(ang>=-180)
-                            //{
-                                //denominator+=weight_ang; 
-                                //if (ang>aCC_mu) nominator+=weight_ang;
-                                //else nominator+=weight_ang*(1-fabs(ang-aCC_mu)/(tol*aCC_sd));
-                            //}
-                        //}
+                        if (has_C4i      && has_C1i && has_C4j      && has_C1j)//successtest+=bp_ang_score(     C4i,C1i,     C4j,C1j,  aCC_mu,  aCC_sd, tol, weight_ang, nominator, denominator); //  aCC:    <C4'[i]C1'[i],C4'[j]C1'[j]>
+                        {
+                            ang=rad2deg(Points4Angle(C4i,C1i,C4j,C1j));
+                            if(ang>=-180)
+                            {
+                                successtest++;
+                                denominator+=weight_ang; 
+                                if (ang>aCC_mu) nominator+=weight_ang;
+                                else nominator+=weight_ang*(1-fabs(ang-aCC_mu)/(tol*aCC_sd));
+                            }
+                        }
                         //if (nominator<0) continue;
                     }
                     
@@ -859,7 +866,7 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
                 }
             }
         }
-        cerr<<endl;
+        //cerr<<endl;
     }
 
     /* clean up */
