@@ -593,7 +593,7 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
                     if (!pdb_entry.chains[c2].residues[r2].atoms.size() ||
                         Points2Distance2(
                         pdb_entry.chains[c1].residues[r1].atoms[0].xyz,
-                        pdb_entry.chains[c2].residues[r2].atoms[0].xyz)>600)
+                        pdb_entry.chains[c2].residues[r2].atoms[0].xyz)>530)
                         continue;
                     base2=pdb_entry.chains[c2].residues[r2].resn[2];
                     if ((base1=='A' &&(base2=='U' || base2=='T')) ||

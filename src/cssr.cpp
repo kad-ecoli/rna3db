@@ -34,6 +34,7 @@ int main(int argc,char **argv)
     
     int atomic_detail=2;
     int allowX       =1; // only allow ATOM and MSE
+    ios_base::sync_with_stdio(false);
     ModelUnit pdb_entry=read_pdb_structure(
         pdbfile.c_str(),atomic_detail,allowX);
 
