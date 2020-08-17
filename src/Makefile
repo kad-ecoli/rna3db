@@ -2,10 +2,13 @@ CC=g++
 CFLAGS=-O3
 LDFLAGS=-static
 
-PROG=NaTorsion MissingRNAatom BPtorsion cssr
+PROG=NaTorsion MissingRNAatom BPtorsion cssr newChainID
 HEADER=PDBParser.hpp pstream.h GeometryTools.hpp
 
 all: ${PROG}
+
+newChainID: newChainID.cpp
+	${CC} ${CFLAGS} $@.cpp -o $@ ${LDFLAGS}
 
 NaTorsion: NaTorsion.cpp NaTorsion.hpp ${HEADER}
 	${CC} ${CFLAGS} $@.cpp -o $@ ${LDFLAGS}

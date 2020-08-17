@@ -16,6 +16,7 @@ ligand-expo/U/
 src/MissingRNAatom
 src/NaTorsion
 src/BPtorsion
+src/newChainID
 src/cssr
 src/*.pdb
 src/*.dssr

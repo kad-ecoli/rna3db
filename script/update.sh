@@ -7,3 +7,6 @@ $bindir/download.sh
 
 echo $bindir/cull.sh
 $bindir/cull.sh
+
+echo $bindir/cull_dimer.sh
+$bindir/cull_dimer.sh
