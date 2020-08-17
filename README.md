@@ -35,7 +35,8 @@ Gene Ontology annotation database (optional):
 script/GOA.sh
 ```
 
-Statistics of PDB geometry
+Statistics of PDB geometry (optional):
 ```bash
 script/stat.sh
 ```
+Results are available under ``stat``
