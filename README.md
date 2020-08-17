@@ -14,6 +14,15 @@ This package synchronize and curate the updated set of RNA structures from the P
 
 [3] ``pdb/data/structures/all/pdb/`` raw PDB files.
 
+[4] ``cull`` monomeric PDB chains and their sequences
+- ``cull/pdb_atom.fasta`` sequences of all chains, converted from "ATOM  " record
+- ``cull/pdb_atm.sort.{1.5,2.0,2.5,3.0,3.5,4.0,20.0,all}`` sequences of all chains up to a certain resolution cutoff
+- ``cull/pdb_atm.sort.{1.5,2.0,2.5,3.0,3.5,4.0,20.0,all}_c{0.8,0.9,1.0}_s{0.0,0.8,0.9,1.0}`` sequences of cd-hit-est clustered representative sequences with different sequence identity (c) and sequence coverage (s) cutoff
+- ``cull/all_c1.0_s1.0/*.pdb`` all pdb chains with non-identical sequences 
+- ``cull/all_c1.0_s1.0/DSSR/*.dssr`` DSSR assigned secondary structure 
+
+[5] ``dimer`` dimeric PDB chains and their sequences, with the same directory structure as ``cull``
+
 ### Update ###
 
 Structure database:
