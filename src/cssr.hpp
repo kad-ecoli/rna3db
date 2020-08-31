@@ -118,11 +118,13 @@ void cssr_bp2dot(const vector<string>&res_str_vec,
         if (r2==r) continue;
         if (r>0)
         {
-            for (r1=r-1; r1>0; r1--) // find upstream pairs
+            for (r1=r-1; r1>=0; r1--) // find upstream pairs
             {
                 if (bpint_vec[r1][0]!=r2+1) break;
+                if (r>bpint_vec[r][0] && r1<bpint_vec[r1][0]) break;
                 r2++;
                 bpint_vec[r][2]++;
+                if (r1==0) break;
             }
         }
         r2=bpint_vec[r][0];
@@ -131,6 +133,7 @@ void cssr_bp2dot(const vector<string>&res_str_vec,
             for (r1=r+1; r1<Lch; r1++) // find downstream pairs
             {
                 if (bpint_vec[r1][0]!=r2-1) break;
+                if (r<bpint_vec[r][0] && r1>bpint_vec[r1][0]) break;
                 r2--;
                 bpint_vec[r][3]++;
             }
