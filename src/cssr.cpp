@@ -38,6 +38,9 @@ int main(int argc,char **argv)
     ModelUnit pdb_entry=read_pdb_structure(
         pdbfile.c_str(),atomic_detail,allowX);
 
+    if (atom.size()==1) atom+=" ";
+    if (atom.size()==2) atom+=" ";
+    if (atom.size()==3) atom=" "+atom;
     if (atom.size()!=4)
     {
         cerr<<"ERROR! atom name must have 4 characters, including spaces."<<endl;
