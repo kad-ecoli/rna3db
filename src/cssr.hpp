@@ -396,10 +396,10 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
     float weight_nn =1;
     float weight_tor=1;
     float weight_ang=1;
-    float tol=1; // tolerance, in the unit of standard deviation
+    float tol=2; // tolerance, in the unit of standard deviation
     float adjust1=0.4; // adjust for varying number of tests
-    float adjust2=0.1; // adjust for varying std
-    float adjust3=0.4; // baseline value
+    float adjust2=0.07; // adjust for varying std
+    float adjust3=0.3; // baseline value
     float totaltest=(10-1)*(weight_len>0)+
                     (10-1)*(weight_nn >0)+
                     ( 9-1)*(weight_tor>0)+
