@@ -327,7 +327,7 @@ inline bool bp_len_score(const vector<float>&c1, const vector<float>&c2,
     float &nominator, float &denominator, vector<float>&sd_len)
 {
     denominator+=weight;
-    nominator+=weight*(1-fabs(Points2Distance(c1,c2)-mu)/(sd));
+    nominator+=weight*(1-fabs(Points2Distance(c1,c2)-mu)/(tol*sd));
     sd_len.push_back(sd);
     return true;
 }
@@ -397,9 +397,9 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
     float weight_tor=1;
     float weight_ang=1;
     float tol=2; // tolerance, in the unit of standard deviation
-    float adjust1=0.4; // adjust for varying number of tests
-    float adjust2=0.07; // adjust for varying std
-    float adjust3=0.3; // baseline value
+    float adjust1=0.2;  // adjust for varying number of tests
+    float adjust2=0.05; // adjust for varying std
+    float adjust3=0.1;  // baseline value
     float totaltest=(10-1)*(weight_len>0)+
                     (10-1)*(weight_nn >0)+
                     ( 9-1)*(weight_tor>0)+
