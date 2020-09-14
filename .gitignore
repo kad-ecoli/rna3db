@@ -18,6 +18,7 @@ src/NaTorsion
 src/BPtorsion
 src/newChainID
 src/cssr
+src/NAbuilder
 src/*.pdb
 src/*.dssr
 
