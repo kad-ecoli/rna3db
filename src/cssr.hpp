@@ -44,8 +44,6 @@ size_t check_type_bracket(const vector<char>&dot_bracket, const size_t r1, const
 {
     size_t max_type=0;
     size_t cur_type=0;
-    size_t left_count=0;
-    size_t right_count=0;
     size_t r_left, r_right;
     if (r1<r2)
     {
@@ -271,13 +269,13 @@ void removeUnspecifiedAtom(ModelUnit &pdb_entry, const string atom)
                     continue;
                 if (a!=0)
                 {
-                    pdb_entry.chains[c].residues[r].atoms[0].name==
+                    pdb_entry.chains[c].residues[r].atoms[0].name=
                     pdb_entry.chains[c].residues[r].atoms[a].name;
-                    pdb_entry.chains[c].residues[r].atoms[0].xyz[0]==
+                    pdb_entry.chains[c].residues[r].atoms[0].xyz[0]=
                     pdb_entry.chains[c].residues[r].atoms[a].xyz[0];
-                    pdb_entry.chains[c].residues[r].atoms[0].xyz[1]==
+                    pdb_entry.chains[c].residues[r].atoms[0].xyz[1]=
                     pdb_entry.chains[c].residues[r].atoms[a].xyz[1];
-                    pdb_entry.chains[c].residues[r].atoms[0].xyz[2]==
+                    pdb_entry.chains[c].residues[r].atoms[0].xyz[2]=
                     pdb_entry.chains[c].residues[r].atoms[a].xyz[2];
                 }
                 break;
@@ -322,29 +320,63 @@ inline bool bp_ang_score(
     return true;
 }
 
+inline bool bp_nn_score(const bool previnextj, const bool nextiprevj,
+    const bool has_prev_ci,       const bool has_next_ci,
+    const bool has_prev_cj,       const bool has_next_cj,
+    const vector<float> &prev_ci, const vector<float> &next_ci,
+    const vector<float> &prev_cj, const vector<float> &next_cj,
+    const float mu, const float sd, const float tol, const float weight,
+    float &nominator, float &denominator)
+{
+    if (!(has_prev_ci && has_next_cj) && !(has_next_ci && has_prev_cj))
+        return false;
+    denominator+=weight;
+    float nominator_previnextj=0;
+    float nominator_nextiprevj=0;
+    if (has_prev_ci  && has_next_cj )
+    {
+        nominator_previnextj=1-fabs(Points2Distance(prev_ci,next_cj)-mu)/(tol*sd);
+        if (!previnextj && nominator_previnextj>0) nominator_previnextj=0;
+    }
+    if (has_next_ci  && has_prev_cj )
+    {
+        nominator_nextiprevj=1-fabs(Points2Distance(next_ci,prev_cj)-mu)/(tol*sd);
+        if (!nextiprevj && nominator_nextiprevj>0) nominator_nextiprevj=0;
+    }
+
+    if (nominator_previnextj>nominator_nextiprevj)
+         nominator+=weight*nominator_previnextj;
+    else nominator+=weight*nominator_nextiprevj;
+    return true;
+}
+
 void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
     vector<pair<float,vector<string> > >&bp_vec, const bool interchain)
 {
     /* pre-trained parameters */
-    float weight_tor=1;
     float weight_len=1;
+    float weight_nn =1;
+    float weight_tor=1;
     float weight_ang=1;
     float tol=1; // tolerance, in the unit of standard deviation
-    float adjust=0.7;
-    float totaltest=( 9-1)*(weight_tor>0)+
-                    (10-1)*(weight_len>0)+
-                    (10-1)*(weight_ang>0);
+    float adjust=0.8;
+    float totaltest=(10-0)*(weight_len>0)+
+                    (10-0)*(weight_nn >0)+
+                    ( 9-0)*(weight_tor>0)+
+                    (10-0)*(weight_ang>0);
     
     /* other variables */
     vector<string> tmp_bp(3,"");
-    float tor;
-    float len;
     float ang;
-    size_t bp, c1, c2, r1, r2, a1, a2;
+    size_t c1, c2, r1, r2, a1, a2;
     char base1,base2;
+    char base1prev,base1next;
+    char base2prev,base2next;
     char icode,chainID;
     stringstream ss;
     float nominator, denominator;
+    float nominator_previnextj;
+    float nominator_nextiprevj;
     int   successtest;
 
     /* coordinates of previous residue */
@@ -357,6 +389,7 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
     vector<float>prev_C1i(3,0); bool has_prev_C1i; vector<float>prev_C1j(3,0); bool has_prev_C1j;
     vector<float>prev_O4i(3,0); bool has_prev_O4i; vector<float>prev_O4j(3,0); bool has_prev_O4j;
     vector<float>prev_O3i(3,0); bool has_prev_O3i; vector<float>prev_O3j(3,0); bool has_prev_O3j;
+    vector<float>prev_Nxi(3,0); bool has_prev_Nxi; vector<float>prev_Nxj(3,0); bool has_prev_Nxj;
     /* coordinates of current residue */
     vector<float>Pi(3,0);  bool has_Pi;  vector<float>Pj(3,0);  bool has_Pj; 
     vector<float>O5i(3,0); bool has_O5i; vector<float>O5j(3,0); bool has_O5j;
@@ -378,6 +411,8 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
     vector<float>next_C1i(3,0); bool has_next_C1i; vector<float>next_C1j(3,0); bool has_next_C1j;
     vector<float>next_O4i(3,0); bool has_next_O4i; vector<float>next_O4j(3,0); bool has_next_O4j;
     vector<float>next_O3i(3,0); bool has_next_O3i; vector<float>next_O3j(3,0); bool has_next_O3j;
+    vector<float>next_Nxi(3,0); bool has_next_Nxi; vector<float>next_Nxj(3,0); bool has_next_Nxj;
+    bool previnextj,nextiprevj;
 
     /* loop over base pairs */
     for (c1=0; c1<pdb_entry.chains.size(); c1++)
@@ -387,7 +422,8 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
         for (r1=0; r1<pdb_entry.chains[c1].residues.size(); r1++)
         {
             base1=pdb_entry.chains[c1].residues[r1].resn[2];
-            //cerr<<base1;
+            base1prev=base1next=0;
+            //cerr<<base1<<endl;
             if (!pdb_entry.chains[c1].residues[r1].atoms.size()) continue;
             if ((chainID=pdb_entry.chains[c1].chainID)!=' ') 
                 ss<<chainID<<".";
@@ -407,6 +443,7 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
             has_prev_C1i = false;
             has_prev_O4i = false;
             has_prev_O3i = false;
+            has_prev_Nxi = false;
             has_Pi       = false;
             has_O5i      = false;
             has_C5i      = false;
@@ -426,6 +463,7 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
             has_next_C1i = false;
             has_next_O4i = false;
             has_next_O3i = false;
+            has_next_Nxi = false;
 
             for (a1=0;a1<pdb_entry.chains[c1].residues[r1].atoms.size();a1++)
             {
@@ -484,8 +522,9 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
                 }
             }
 
-            if (r1>0 && (weight_tor>0 || weight_ang>0))
+            if (r1>0 && (weight_tor>0 || weight_ang>0 || weight_nn>0))
             {
+                base1prev=pdb_entry.chains[c1].residues[r1-1].resn[2];
                 for (a1=0;a1<pdb_entry.chains[c1].residues[r1-1].atoms.size();a1++)
                 {
                     if (pdb_entry.chains[c1].residues[r1-1].atoms[a1].name==" P  ")
@@ -533,11 +572,20 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
                         has_prev_O3i=true;
                         prev_O3i=pdb_entry.chains[c1].residues[r1-1].atoms[a1].xyz;
                     }
+                    else if ((pdb_entry.chains[c1].residues[r1-1].atoms[a1].name==" N9 "
+                            && (base1prev=='A' || base1prev=='G')) ||
+                             (pdb_entry.chains[c1].residues[r1-1].atoms[a1].name==" N1 "
+                            && (base1prev=='C' || base1prev=='T' || base1prev=='U')))
+                    {
+                        has_prev_Nxi=true;
+                        prev_Nxi=pdb_entry.chains[c1].residues[r1-1].atoms[a1].xyz;
+                    }
                 }
             }
 
-            if (r1<pdb_entry.chains[c1].residues.size()-1 && (weight_tor>0 || weight_ang>0))
+            if (r1<pdb_entry.chains[c1].residues.size()-1 && (weight_tor>0 || weight_ang>0 || weight_nn>0))
             {
+                base1next=pdb_entry.chains[c1].residues[r1+1].resn[2];
                 for (a1=0;a1<pdb_entry.chains[c1].residues[r1+1].atoms.size();a1++)
                 {
                     if (pdb_entry.chains[c1].residues[r1+1].atoms[a1].name==" P  ")
@@ -585,6 +633,14 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
                         has_next_O3i=true;
                         next_O3i=pdb_entry.chains[c1].residues[r1+1].atoms[a1].xyz;
                     }
+                    else if ((pdb_entry.chains[c1].residues[r1+1].atoms[a1].name==" N9 "
+                            && (base1next=='A' || base1next=='G')) ||
+                             (pdb_entry.chains[c1].residues[r1+1].atoms[a1].name==" N1 "
+                            && (base1next=='C' || base1next=='T' || base1next=='U')))
+                    {
+                        has_next_Nxi=true;
+                        next_Nxi=pdb_entry.chains[c1].residues[r1+1].atoms[a1].xyz;
+                    }
                 }
             }
 
@@ -599,6 +655,7 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
                         pdb_entry.chains[c2].residues[r2].atoms[0].xyz)>530)
                         continue;
                     base2=pdb_entry.chains[c2].residues[r2].resn[2];
+                    base2prev=base2next=0;
                     if ((base1=='A' &&(base2=='U' || base2=='T')) ||
                         (base1=='C' && base2=='G')||
                        ((base1=='U' || base1=='T')&& base2=='A')  ||
@@ -703,8 +760,9 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
                         }
                     }
 
-                    if (r2>0 && (weight_tor>0 || weight_ang>0) && c2-c1+r2-r1>1)
+                    if (r2>0 && (weight_tor>0 || weight_ang>0 || weight_nn>0) && c2-c1+r2-r1>1)
                     {
+                        base2prev=pdb_entry.chains[c2].residues[r2-1].resn[2];
                         for (a2=0;a2<pdb_entry.chains[c2].residues[r2-1].atoms.size();a2++)
                         {
                             if (pdb_entry.chains[c2].residues[r2-1].atoms[a2].name==" P  ")
@@ -752,12 +810,21 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
                                 has_prev_O3j=true;
                                 prev_O3j=pdb_entry.chains[c2].residues[r2-1].atoms[a2].xyz;
                             }
+                            else if ((pdb_entry.chains[c2].residues[r2-1].atoms[a2].name==" N9 "
+                                  && (base2prev=='A' || base2prev=='G')) ||
+                                     (pdb_entry.chains[c2].residues[r2-1].atoms[a2].name==" N1 "
+                                  && (base2prev=='C' || base2prev=='T' || base2prev=='U')))
+                            {
+                                has_prev_Nxj=true;
+                                prev_Nxj=pdb_entry.chains[c2].residues[r2-1].atoms[a2].xyz;
+                            }
                         }
                     }
 
                     if (r2<pdb_entry.chains[c2].residues.size()-1 && 
-                        (weight_tor>0 || weight_ang>0) && c2-c1+r2-r1>1)
+                       (weight_tor>0 || weight_ang>0 || weight_nn>0) && c2-c1+r2-r1>1)
                     {
+                        base2next=pdb_entry.chains[c2].residues[r2+1].resn[2];
                         for (a2=0;a2<pdb_entry.chains[c2].residues[r2+1].atoms.size();a2++)
                         {
                             if (pdb_entry.chains[c2].residues[r2+1].atoms[a2].name==" P  ")
@@ -805,14 +872,22 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
                                 has_next_O3j=true;
                                 next_O3j=pdb_entry.chains[c2].residues[r2+1].atoms[a2].xyz;
                             }
+                            else if ((pdb_entry.chains[c2].residues[r2+1].atoms[a2].name==" N9 "
+                                  && (base2next=='A' || base2next=='G')) ||
+                                     (pdb_entry.chains[c2].residues[r2+1].atoms[a2].name==" N1 "
+                                  && (base2next=='C' || base2next=='T' || base2next=='U')))
+                            {
+                                has_next_Nxj=true;
+                                next_Nxj=pdb_entry.chains[c2].residues[r2+1].atoms[a2].xyz;
+                            }
                         }
                     }
 
                     nominator=denominator=successtest=0;
                     if (weight_len>0)
                     {
-                        successtest--;
-                        if (has_Pi  && has_Pj)  {successtest++; denominator+=weight_len; nominator+=weight_len*(1-fabs(Points2Distance( Pi, Pj)-  PP_mu)/(tol*  PP_sd));} //   PP: P[i]-P[j]
+                        //successtest--;
+                        if (has_Pi  && has_Pj ) {successtest++; denominator+=weight_len; nominator+=weight_len*(1-fabs(Points2Distance( Pi, Pj)-  PP_mu)/(tol*  PP_sd));} //   PP: P[i]-P[j]
                         if (has_O5i && has_O5j) {successtest++; denominator+=weight_len; nominator+=weight_len*(1-fabs(Points2Distance(O5i,O5j)-O5O5_mu)/(tol*O5O5_sd));} // O5O5: O5'[i]-O5'[j]
                         if (has_C5i && has_C5j) {successtest++; denominator+=weight_len; nominator+=weight_len*(1-fabs(Points2Distance(C5i,C5j)-C5C5_mu)/(tol*C5C5_sd));} // C5C5: C5'[i]-C5'[j]
                         if (has_C4i && has_C4j) {successtest++; denominator+=weight_len; nominator+=weight_len*(1-fabs(Points2Distance(C4i,C4j)-C4C4_mu)/(tol*C4C4_sd));} // C4C4: C4'[i]-C4'[j]
@@ -824,9 +899,51 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
                         if (has_Nxi && has_Nxj) {successtest++; denominator+=weight_len; nominator+=weight_len*(1-fabs(Points2Distance(Nxi,Nxj)-  NN_mu)/(tol*  NN_sd));} //   NN: N[i]-N[j]
                         //if (nominator<0) continue;
                     }
+                    if (weight_nn>0)
+                    {
+                        previnextj=((base1prev=='A' &&(base2next=='U' || base2next=='T')) ||
+                                    (base1prev=='C' && base2next=='G')||
+                                   ((base1prev=='U' || base1prev=='T')&& base2next=='A')  ||
+                                    (base1prev=='G' && base2next=='C'));
+                        nextiprevj=((base1next=='A' &&(base2prev=='U' || base2prev=='T')) ||
+                                    (base1next=='C' && base2prev=='G')||
+                                   ((base1next=='U' || base1next=='T')&& base2prev=='A')  ||
+                                    (base1next=='G' && base2prev=='C'));
+                        //successtest--;
+                        if (has_Pi  && has_Pj) //   PP: P[i]-P[j]
+                            successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_Pi, has_next_Pi, has_prev_Pj, has_next_Pj,
+                                prev_Pi, next_Pi, prev_Pj, next_Pj,   PP_mu,  PP_sd,tol,weight_nn,nominator,denominator);
+                        if (has_O5i && has_O5j) // O5O5: O5'[i]-O5'[j]
+                            successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_O5i,has_next_O5i,has_prev_O5j,has_next_O5j,
+                                prev_O5i,next_O5i,prev_O5j,next_O5j,O5O5_mu,O5O5_sd,tol,weight_nn,nominator,denominator);
+                        if (has_C5i && has_C5j) // C5C5: C5'[i]-C5'[j]
+                            successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_C5i,has_next_C5i,has_prev_C5j,has_next_C5j,
+                                prev_C5i,next_C5i,prev_C5j,next_C5j,C5C5_mu,C5C5_sd,tol,weight_nn,nominator,denominator);
+                        if (has_C4i && has_C4j) // C4C4: C4'[i]-C4'[j]
+                            successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_C4i,has_next_C4i,has_prev_C4j,has_next_C4j,
+                                prev_C4i,next_C4i,prev_C4j,next_C4j,C4C4_mu,C4C4_sd,tol,weight_nn,nominator,denominator);
+                        if (has_C3i && has_C3j) // C3C3: C3'[i]-C3'[j]
+                            successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_C3i,has_next_C3i,has_prev_C3j,has_next_C3j,
+                                prev_C3i,next_C3i,prev_C3j,next_C3j,C3C3_mu,C3C3_sd,tol,weight_nn,nominator,denominator);
+                        if (has_C2i && has_C2j) // C2C2: C2'[i]-C2'[j]
+                            successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_C2i,has_next_C2i,has_prev_C2j,has_next_C2j,
+                                prev_C2i,next_C2i,prev_C2j,next_C2j,C2C2_mu,C2C2_sd,tol,weight_nn,nominator,denominator);
+                        if (has_C1i && has_C1j) // C1C1: C1'[i]-C1'[j]
+                            successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_C1i,has_next_C1i,has_prev_C1j,has_next_C1j,
+                                prev_C1i,next_C1i,prev_C1j,next_C1j,C1C1_mu,C1C1_sd,tol,weight_nn,nominator,denominator);
+                        if (has_O4i && has_O4j) // O4O4: O4'[i]-O4'[j]
+                            successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_O4i,has_next_O4i,has_prev_O4j,has_next_O4j,
+                                prev_O4i,next_O4i,prev_O4j,next_O4j,O4O4_mu,O4O4_sd,tol,weight_nn,nominator,denominator);
+                        if (has_O3i && has_O3j) // O3O3: O3'[i]-O3'[j]
+                            successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_O3i,has_next_O3i,has_prev_O3j,has_next_O3j,
+                                prev_O3i,next_O3i,prev_O3j,next_O3j,O3O3_mu,O3O3_sd,tol,weight_nn,nominator,denominator);
+                        if (has_Nxi && has_Nxj) //   NN: N[i]-N[j]
+                            successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_Nxi,has_next_Nxi,has_prev_Nxj,has_next_Nxj,
+                                prev_Nxi,next_Nxi,prev_Nxj,next_Nxj,  NN_mu,  NN_sd,tol,weight_nn,nominator, denominator);
+                    }
                     if (weight_tor>0)
                     {
-                        successtest--;
+                        //successtest--;
                         if (has_next_Pi  && has_Pi  && has_Pj  && has_next_Pj ) successtest+=bp_tor_score( next_Pi, Pi, Pj, next_Pj,  Pp_mu,  Pp_sd, tol, weight_tor, nominator, denominator); //  Pp:  P[i+1]-P[i]-P[j]-P[j-1]
                         if (has_next_O5i && has_O5i && has_O5j && has_next_O5j) successtest+=bp_tor_score(next_O5i,O5i,O5j,next_O5j, O5p_mu, O5p_sd, tol, weight_tor, nominator, denominator); // O5p: O5'[i+1]-O5'[i]-O5'[j]-O5'[j-1]
                         if (has_next_C5i && has_C5i && has_C5j && has_next_C5j) successtest+=bp_tor_score(next_C5i,C5i,C5j,next_C5j, C5p_mu, C5p_sd, tol, weight_tor, nominator, denominator); // C5p: C5'[i+1]-C5'[i]-C5'[j]-C5'[j-1]
@@ -840,7 +957,7 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
                     }
                     if (weight_ang>0)
                     {
-                        successtest--;
+                        //successtest--;
                         if (has_next_Pi  && has_Pi  && has_prev_Pj  && has_Pj ) successtest+=bp_ang_score( next_Pi, Pi, prev_Pj, Pj,  aPp_mu,  aPp_sd, tol, weight_ang, nominator, denominator); //  aPp:      <P[i+1]P[i],P[j-1]P[j]>
                         if (has_next_O5i && has_O5i && has_prev_O5j && has_O5j) successtest+=bp_ang_score(next_O5i,O5i,prev_O5j,O5j, aO5p_mu, aO5p_sd, tol, weight_ang, nominator, denominator); // aO5p: <O5'[i+1]O5'[i],O5'[j-1]O5'[j]> 
                         if (has_next_C5i && has_C5i && has_prev_C5j && has_C5j) successtest+=bp_ang_score(next_C5i,C5i,prev_C5j,C5j, aC5p_mu, aC5p_sd, tol, weight_ang, nominator, denominator); // aC5p: <C5'[i+1]C5'[i],C5'[j-1]C5'[j]> 
