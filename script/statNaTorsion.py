@@ -152,24 +152,37 @@ def statNaTorsion(rawfile):
         plt.yticks(fontsize=fontsize)
         plt.xlabel("v2 for "+na,fontsize=fontsize)
     plt.tight_layout(pad=0.1,h_pad=0.1,w_pad=0.1)
+    print("pucker.png")
     plt.savefig("pucker.png",dpi=300)
 
     #### pseudo torsion ####
     plt.figure(figsize=(7.87,7.87))
     for row in range(2):
         for col in range(2):
-            for l,label in enumerate(["C3' endo","C2' endo"]):
+            for l,ylabel in enumerate(["C3' endo","C2' endo"]):
                 plt.subplot(4,4,col+3+8*row+4*l)
                 angle_data=data[pucker_array==1-l*2,col+7+row*2]
+                label=''
+                if l==0:
+                    tmp_data=angle_data[angle_data>=-180]
+                    tmp_data[tmp_data<0]+=360
+                    mean=tmp_data.mean()
+                    if mean>180:
+                        mean-=360
+                    std=tmp_data.std()
+                    label=r"$\mu=%.2f$"%mean+'\n'+r"$\sigma=%.2f$"%std
                 n=plt.hist(angle_data,bins=np.arange(-180,181,1),
                     edgecolor="none",facecolor=["blue","red"][l],
                     width=1, align="left", label=label)[0]
+                if label:
+                    plt.legend(loc="upper center",handlelength=0,
+                        fontsize=fontsize)
                 plt.axis([-180,180,0,n.max()*1.1])
                 plt.xticks(xticks,xticks,fontsize=fontsize)
                 plt.yticks(fontsize=fontsize)
                 plt.xlabel(angle_list[col+7+row*2],fontsize=fontsize)
                 if col==0:
-                    plt.ylabel("Counts (%s)"%label,fontsize=fontsize)
+                    plt.ylabel("Counts (%s)"%ylabel,fontsize=fontsize)
 
         plt.subplot(2,2,1+2*row)
         x_data=data[pucker_array==-1,7+row*2]
@@ -185,6 +198,7 @@ def statNaTorsion(rawfile):
         plt.ylabel(angle_list[8+row*2],fontsize=fontsize)
         
     plt.tight_layout(pad=0.1,h_pad=-0.3,w_pad=-1.5)
+    print("pseudotorsion.png")
     plt.savefig("pseudotorsion.png",dpi=300)
 
     #### sugar torsion ####
@@ -208,31 +222,44 @@ def statNaTorsion(rawfile):
 
     
     plt.tight_layout(pad=0.1,h_pad=0.1,w_pad=0.1)
+    print("sugartorsion.png")
     plt.savefig("sugartorsion.png",dpi=300)
 
     #### backbone torsion ####
     plt.figure(figsize=(7.87,7.87))
     for a in range(11,18):
         angle=angle_list[a]
-        for l,label in enumerate(["C3' endo","C2' endo"]):
+        for l,ylabel in enumerate(["C3' endo","C2' endo"]):
             if a<=14:
                 plt.subplot(4,4,(a-10)+l*4)
             else:
                 plt.subplot(4,4,(a-6)+l*4)
             angle_data=data[pucker_array==1-l*2,a]
+            label=''
+            if a==17:
+                tmp_data=angle_data[angle_data>=-180]
+                tmp_data[tmp_data<0]+=360
+                mean=tmp_data.mean()
+                if mean>180:
+                    mean-=360
+                std=tmp_data.std()
+                label=r"$\mu=%.2f$"%mean+'\n'+r"$\sigma=%.2f$"%std
             n=plt.hist(angle_data,bins=np.arange(-180,181,1),
                 edgecolor="none",facecolor=["blue","red"][l],
                 width=1, align="left", label=label)[0]
+            if label:
+                plt.legend(loc="upper right",handlelength=0,fontsize=fontsize)
             plt.axis([-180,180,0,n.max()*1.1])
             plt.xticks(xticks,xticks,fontsize=fontsize)
             plt.yticks(fontsize=fontsize)
             plt.xlabel(angle_list[a],fontsize=fontsize)
             if a==17:
-                plt.xlabel(angle_list[a]+" (C1'-P-C4'-P[+1])",fontsize=fontsize)
+                plt.xlabel(angle_list[a]+" (C1'-C4'-P-P[+1])",fontsize=fontsize)
             if a in [11,15]:
-                plt.ylabel("Counts (%s)"%label,fontsize=fontsize)
+                plt.ylabel("Counts (%s)"%ylabel,fontsize=fontsize)
         
     plt.tight_layout(pad=0.1,h_pad=0.1,w_pad=0.1)
+    print("backbonetorsion.png")
     plt.savefig("backbonetorsion.png",dpi=300)
     
     #### sidechain torsion ####
@@ -276,16 +303,18 @@ def statNaTorsion(rawfile):
                 plt.ylabel("Counts (%s)"%label,fontsize=fontsize)
         
     plt.tight_layout(pad=0.1,h_pad=0.1,w_pad=0.1)
+    print("sidechaintorsion.png")
     plt.savefig("sidechaintorsion.png",dpi=300)
     
     #### pseudobond length ####
     plt.figure(figsize=(7.87,7.87))
     bins=np.arange(0,12,0.1)
-    xticks=range(0,13,2)
+    xticks=range(3,12,2)
     width=0.1
     for a in range(19,32):
         xlabel=xlabel_dict[angle_list[a]]
         plt.subplot(4,4,a-18)
+        
         bond_data=data[:,a]
         bond_data=bond_data[bond_data>0]
         bond_data=bond_data[bond_data<12]
@@ -294,17 +323,35 @@ def statNaTorsion(rawfile):
         n=plt.hist(bond_data,bins=bins,
             edgecolor="none",facecolor="grey",
             width=width, align="left", label=label)[0]
-        plt.axis([0,max(xticks),0,n.max()*1.1])
+        ymax=n.max()
+        plt.legend(loc="upper right",handlelength=0,fontsize=fontsize)
+        
+        #ymax=0
+        #for l,label in enumerate(["C3' endo\n","C2' endo\n"]):
+            #bond_data=data[pucker_array==1-l*2,a]
+            #bond_data=bond_data[bond_data>0]
+            #bond_data=bond_data[bond_data<12]
+            #label+=r"$\mu$"+"=%.3f\n"%bond_data.mean()+ \
+                #r"$\sigma$"+"=%.3f"%bond_data.std()
+            #n=plt.hist(bond_data,bins=bins,
+                #edgecolor="none",facecolor=["blue","red"][l],
+                #width=width, align="left", label=label)[0]
+            #ymax=max((n.max(),ymax))
+        #plt.legend(loc="upper right",fontsize=fontsize)
+
+        if a>=28:
+            xticks=range(2,8,1)
+        plt.axis([min(xticks),max(xticks),0,ymax*1.1])
         plt.xticks(xticks,xticks,fontsize=fontsize)
         plt.yticks(fontsize=fontsize)
         plt.xlabel(xlabel,fontsize=fontsize)
-        plt.legend(loc="upper right",handlelength=0,fontsize=fontsize)
     plt.tight_layout(pad=0.1,h_pad=0.1,w_pad=0.1)
+    print("pseudobond.png")
     plt.savefig("pseudobond.png",dpi=300)
 
     plt.figure(figsize=(7.87,5.90))
     bins=np.arange(0,4,0.001)
-    xticks=range(0,5,1)
+    xticks=np.arange(2,3.1,0.2)
     width=0.001
     for a in range(32,42):
         xlabel=xlabel_dict[angle_list[a]]
@@ -317,16 +364,18 @@ def statNaTorsion(rawfile):
         n=plt.hist(bond_data,bins=bins,
             edgecolor="none",facecolor="grey",
             width=width, align="left", label=label)[0]
-        plt.axis([0,max(xticks),0,n.max()*1.1])
-        plt.xticks(xticks,xticks,fontsize=fontsize)
+        plt.axis([min(xticks),max(xticks),0,n.max()*1.1])
+        plt.xticks(xticks,["%.1f"%x for x in xticks],fontsize=fontsize)
         plt.yticks(fontsize=fontsize)
         plt.xlabel(xlabel,fontsize=fontsize)
-        plt.legend(loc="upper left",handlelength=0,fontsize=fontsize)
+        plt.legend(loc="upper right",handlelength=0,fontsize=fontsize)
     plt.tight_layout(pad=0.1,h_pad=0.1,w_pad=0.1)
+    print("pseudobond2.png")
     plt.savefig("pseudobond2.png",dpi=300)
     
     #### covalent bond length ####
     plt.figure(figsize=(7.87,7.87))
+    xticks=np.arange(1,2.1,0.2)
     for a in range(42,55):
         xlabel=xlabel_dict[angle_list[a]]
         plt.subplot(4,4,a-41)
@@ -338,12 +387,13 @@ def statNaTorsion(rawfile):
         n=plt.hist(bond_data,bins=bins,
             edgecolor="none",facecolor="grey",
             width=width, align="left", label=label)[0]
-        plt.axis([0,max(xticks),0,n.max()*1.1])
-        plt.xticks(xticks,xticks,fontsize=fontsize)
+        plt.axis([min(xticks),max(xticks),0,n.max()*1.1])
+        plt.xticks(xticks,["%.1f"%x for x in xticks],fontsize=fontsize)
         plt.yticks(fontsize=fontsize)
         plt.xlabel(xlabel,fontsize=fontsize)
         plt.legend(loc="upper right",handlelength=0,fontsize=fontsize)
     plt.tight_layout(pad=0.1,h_pad=0.1,w_pad=0.1)
+    print("bond.png")
     plt.savefig("bond.png",dpi=300)
 
     #### pseudo angle ####
@@ -367,6 +417,7 @@ def statNaTorsion(rawfile):
         plt.xlabel(xlabel,fontsize=fontsize)
         plt.legend(loc="upper left",handlelength=0,fontsize=fontsize)
     plt.tight_layout(pad=0.1,h_pad=0.1,w_pad=0.1)
+    print("pseudoangle.png")
     plt.savefig("pseudoangle.png",dpi=300)
 
     #### angle ####
@@ -413,6 +464,7 @@ def statNaTorsion(rawfile):
     plt.legend(loc="upper left",fontsize=fontsize)
 
     plt.tight_layout(pad=0.1,h_pad=0.1,w_pad=0.1)
+    print("bondangle.png")
     plt.savefig("bondangle.png",dpi=300)
     return
 
