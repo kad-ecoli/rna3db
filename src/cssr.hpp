@@ -296,7 +296,7 @@ inline bool bp_tor_score(
     const vector<float> &c1, const vector<float> &c2,
     const vector<float> &c3, const vector<float> &c4,
     const float mu, const float sd, const float tol, const float weight,
-    float &nominator, float &denominator, vector<float>&sd_tor)
+    float &nominator, float &denominator)
 {
     float tor=rad2deg(Points2Dihedral(c1,c2,c3,c4));
     if(tor<-180) return false;
@@ -304,7 +304,6 @@ inline bool bp_tor_score(
     float diff=fabs(tor-mu); 
     if (diff>180) diff-=180;
     nominator+=weight*(1-diff/(tol* sd));
-    sd_tor.push_back(sd);
     return true;
 }
 
@@ -312,23 +311,21 @@ inline bool bp_ang_score(
     const vector<float> &c1, const vector<float> &c2,
     const vector<float> &c3, const vector<float> &c4,
     const float mu, const float sd, const float tol, const float weight,
-    float &nominator, float &denominator, vector<float>&sd_ang)
+    float &nominator, float &denominator)
 {
     float ang=rad2deg(Points4Angle(c1,c2,c3,c4));
     if(ang<-180) return false;
     denominator+=weight;
     nominator+=weight*(1-fabs(ang-mu)/(tol* sd));
-    sd_ang.push_back(sd);
     return true;
 }
 
 inline bool bp_len_score(const vector<float>&c1, const vector<float>&c2,
     const float mu, const float sd, const float tol, const float weight,
-    float &nominator, float &denominator, vector<float>&sd_len)
+    float &nominator, float &denominator)
 {
     denominator+=weight;
     nominator+=weight*(1-fabs(Points2Distance(c1,c2)-mu)/(tol*sd));
-    sd_len.push_back(sd);
     return true;
 }
 
@@ -338,7 +335,7 @@ inline bool bp_nn_score(const bool previnextj, const bool nextiprevj,
     const vector<float> &prev_ci, const vector<float> &next_ci,
     const vector<float> &prev_cj, const vector<float> &next_cj,
     const float mu, const float sd, const float tol, const float weight,
-    float &nominator, float &denominator, vector<float>&sd_nn)
+    float &nominator, float &denominator)
 {
     if (!(has_prev_ci && has_next_cj) && !(has_next_ci && has_prev_cj))
         return false;
@@ -359,7 +356,6 @@ inline bool bp_nn_score(const bool previnextj, const bool nextiprevj,
     if (nominator_previnextj>nominator_nextiprevj)
          nominator+=weight*nominator_previnextj;
     else nominator+=weight*nominator_nextiprevj;
-    sd_nn.push_back(sd);
     return true;
 }
 
@@ -371,23 +367,6 @@ inline float mean_vec(const vector<float>&vec)
     return sum/vec.size();
 }
 
-float adjuststd(const vector<float>&sd_len,const vector<float>&sd_nn,
-    const vector<float>&sd_tor,const vector<float>&sd_ang,
-    const float sd_len_mean, const float sd_nn_mean,
-    const float sd_tor_mean, const float sd_ang_mean,
-    const float weight_len, const float weight_nn ,
-    const float weight_tor, const float weight_ang)
-{
-    return (weight_len*((sd_len.size()>0)?(sd_len_mean-mean_vec(sd_len)):0)+
-            weight_nn *((sd_nn.size() >0)?(sd_nn_mean -mean_vec(sd_nn )):0)+
-            weight_tor*((sd_tor.size()>0)?(sd_tor_mean-mean_vec(sd_tor)):0)+
-            weight_ang*((sd_ang.size()>0)?(sd_ang_mean-mean_vec(sd_ang)):0))
-          /(weight_len*(sd_len.size()>0)+
-            weight_nn *(sd_nn.size() >0)+
-            weight_tor*(sd_tor.size()>0)+
-            weight_ang*(sd_ang.size()>0));
-}
-
 void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
     vector<pair<float,vector<string> > >&bp_vec, const bool interchain)
 {
@@ -396,10 +375,10 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
     float weight_nn =1;
     float weight_tor=1;
     float weight_ang=1;
-    float tol=2; // tolerance, in the unit of standard deviation
-    float adjust1=0.2;  // adjust for varying number of tests
-    float adjust2=0.05; // adjust for varying std
-    float adjust3=0.1;  // baseline value
+    float tol=3; // tolerance, in the unit of standard deviation
+    float adjust1=0.1;  // adjust for varying number of tests
+    float adjust2=0;    // adjust for varying std
+    float adjust3=-0.07;// baseline value
     float totaltest=(10-1)*(weight_len>0)+
                     (10-1)*(weight_nn >0)+
                     ( 9-1)*(weight_tor>0)+
@@ -419,18 +398,6 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
     float nominator_nextiprevj;
     int   successtest;
     bool previnextj,nextiprevj;
-    vector<float> sd_len;
-    vector<float> sd_nn;
-    vector<float> sd_tor;
-    vector<float> sd_ang;
-    float sd_len_mean=(  PP_sd+ O5O5_sd+ C5C5_sd+ C4C4_sd+ C3C3_sd+
-                       C2C2_sd+ C1C1_sd+ O4O4_sd+ O3O3_sd+ NN_sd)/10;
-    float sd_nn_mean =(  PP_sd+ O5O5_sd+ C5C5_sd+ C4C4_sd+ C3C3_sd+
-                       C2C2_sd+ C1C1_sd+ O4O4_sd+ O3O3_sd+ NN_sd)/10;
-    float sd_tor_mean=(  Pp_sd+  O5p_sd+  C5p_sd+  C4p_sd+ C3p_sd+
-                        C2p_sd+  C1p_sd+  O4p_sd+  O3m_sd)/9;
-    float sd_ang_mean=( aPp_sd+ aO5p_sd+ aC5p_sd+ aC4p_sd+ aC3p_sd+
-                       aC2p_sd+ aC1p_sd+ aO4p_sd+ aO3p_sd+ aCC_sd)/10;
 
     /* coordinates of previous residue */
     vector<float>prev_Pi(3,0);  bool has_prev_Pi;  vector<float>prev_Pj(3,0);  bool has_prev_Pj; 
@@ -939,16 +906,16 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
                     if (weight_len>0)
                     {
                         successtest--;
-                        if (has_Pi  && has_Pj ) successtest+=bp_len_score( Pi, Pj,  PP_mu,  PP_sd,tol,weight_len,nominator,denominator,sd_len); //   PP: P[i]-P[j]
-                        if (has_O5i && has_O5j) successtest+=bp_len_score(O5i,O5j,O5O5_mu,O5O5_sd,tol,weight_len,nominator,denominator,sd_len); // O5O5: O5'[i]-O5'[j]
-                        if (has_C5i && has_C5j) successtest+=bp_len_score(C5i,C5j,C5C5_mu,C5C5_sd,tol,weight_len,nominator,denominator,sd_len); // C5C5: C5'[i]-C5'[j]
-                        if (has_C4i && has_C4j) successtest+=bp_len_score(C4i,C4j,C4C4_mu,C4C4_sd,tol,weight_len,nominator,denominator,sd_len); // C4C4: C4'[i]-C4'[j]
-                        if (has_C3i && has_C3j) successtest+=bp_len_score(C3i,C3j,C3C3_mu,C3C3_sd,tol,weight_len,nominator,denominator,sd_len); // C3C3: C3'[i]-C3'[j]
-                        if (has_C2i && has_C2j) successtest+=bp_len_score(C2i,C2j,C2C2_mu,C2C2_sd,tol,weight_len,nominator,denominator,sd_len); // C2C2: C2'[i]-C2'[j]
-                        if (has_C1i && has_C1j) successtest+=bp_len_score(C1i,C1j,C1C1_mu,C1C1_sd,tol,weight_len,nominator,denominator,sd_len); // C1C1: C1'[i]-C1'[j]
-                        if (has_O4i && has_O4j) successtest+=bp_len_score(O4i,O4j,O4O4_mu,O4O4_sd,tol,weight_len,nominator,denominator,sd_len); // O4O4: O4'[i]-O4'[j]
-                        if (has_O3i && has_O3j) successtest+=bp_len_score(O3i,O3j,O3O3_mu,O3O3_sd,tol,weight_len,nominator,denominator,sd_len); // O3O3: O3'[i]-O3'[j]
-                        if (has_Nxi && has_Nxj) successtest+=bp_len_score(Nxi,Nxj,  NN_mu,  NN_sd,tol,weight_len,nominator,denominator,sd_len); //   NN: N[i]-N[j]
+                        if (has_Pi  && has_Pj ) successtest+=bp_len_score( Pi, Pj,  PP_mu,  PP_sd,tol,weight_len,nominator,denominator); //   PP: P[i]-P[j]
+                        if (has_O5i && has_O5j) successtest+=bp_len_score(O5i,O5j,O5O5_mu,O5O5_sd,tol,weight_len,nominator,denominator); // O5O5: O5'[i]-O5'[j]
+                        if (has_C5i && has_C5j) successtest+=bp_len_score(C5i,C5j,C5C5_mu,C5C5_sd,tol,weight_len,nominator,denominator); // C5C5: C5'[i]-C5'[j]
+                        if (has_C4i && has_C4j) successtest+=bp_len_score(C4i,C4j,C4C4_mu,C4C4_sd,tol,weight_len,nominator,denominator); // C4C4: C4'[i]-C4'[j]
+                        if (has_C3i && has_C3j) successtest+=bp_len_score(C3i,C3j,C3C3_mu,C3C3_sd,tol,weight_len,nominator,denominator); // C3C3: C3'[i]-C3'[j]
+                        if (has_C2i && has_C2j) successtest+=bp_len_score(C2i,C2j,C2C2_mu,C2C2_sd,tol,weight_len,nominator,denominator); // C2C2: C2'[i]-C2'[j]
+                        if (has_C1i && has_C1j) successtest+=bp_len_score(C1i,C1j,C1C1_mu,C1C1_sd,tol,weight_len,nominator,denominator); // C1C1: C1'[i]-C1'[j]
+                        if (has_O4i && has_O4j) successtest+=bp_len_score(O4i,O4j,O4O4_mu,O4O4_sd,tol,weight_len,nominator,denominator); // O4O4: O4'[i]-O4'[j]
+                        if (has_O3i && has_O3j) successtest+=bp_len_score(O3i,O3j,O3O3_mu,O3O3_sd,tol,weight_len,nominator,denominator); // O3O3: O3'[i]-O3'[j]
+                        if (has_Nxi && has_Nxj) successtest+=bp_len_score(Nxi,Nxj,  NN_mu,  NN_sd,tol,weight_len,nominator,denominator); //   NN: N[i]-N[j]
                     }
                     if (weight_nn>0)
                     {
@@ -963,61 +930,61 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
                                     (base1next=='G' && base2prev=='C'));
                         if (has_Pi  && has_Pj) //   PP: P[i]-P[j]
                             successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_Pi, has_next_Pi, has_prev_Pj, has_next_Pj,
-                                prev_Pi, next_Pi, prev_Pj, next_Pj,   PP_mu,  PP_sd,tol,weight_nn,nominator,denominator,sd_len);
+                                prev_Pi, next_Pi, prev_Pj, next_Pj,   PP_mu,  PP_sd,tol,weight_nn,nominator,denominator);
                         if (has_O5i && has_O5j) // O5O5: O5'[i]-O5'[j]
                             successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_O5i,has_next_O5i,has_prev_O5j,has_next_O5j,
-                                prev_O5i,next_O5i,prev_O5j,next_O5j,O5O5_mu,O5O5_sd,tol,weight_nn,nominator,denominator,sd_len);
+                                prev_O5i,next_O5i,prev_O5j,next_O5j,O5O5_mu,O5O5_sd,tol,weight_nn,nominator,denominator);
                         if (has_C5i && has_C5j) // C5C5: C5'[i]-C5'[j]
                             successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_C5i,has_next_C5i,has_prev_C5j,has_next_C5j,
-                                prev_C5i,next_C5i,prev_C5j,next_C5j,C5C5_mu,C5C5_sd,tol,weight_nn,nominator,denominator,sd_len);
+                                prev_C5i,next_C5i,prev_C5j,next_C5j,C5C5_mu,C5C5_sd,tol,weight_nn,nominator,denominator);
                         if (has_C4i && has_C4j) // C4C4: C4'[i]-C4'[j]
                             successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_C4i,has_next_C4i,has_prev_C4j,has_next_C4j,
-                                prev_C4i,next_C4i,prev_C4j,next_C4j,C4C4_mu,C4C4_sd,tol,weight_nn,nominator,denominator,sd_len);
+                                prev_C4i,next_C4i,prev_C4j,next_C4j,C4C4_mu,C4C4_sd,tol,weight_nn,nominator,denominator);
                         if (has_C3i && has_C3j) // C3C3: C3'[i]-C3'[j]
                             successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_C3i,has_next_C3i,has_prev_C3j,has_next_C3j,
-                                prev_C3i,next_C3i,prev_C3j,next_C3j,C3C3_mu,C3C3_sd,tol,weight_nn,nominator,denominator,sd_len);
+                                prev_C3i,next_C3i,prev_C3j,next_C3j,C3C3_mu,C3C3_sd,tol,weight_nn,nominator,denominator);
                         if (has_C2i && has_C2j) // C2C2: C2'[i]-C2'[j]
                             successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_C2i,has_next_C2i,has_prev_C2j,has_next_C2j,
-                                prev_C2i,next_C2i,prev_C2j,next_C2j,C2C2_mu,C2C2_sd,tol,weight_nn,nominator,denominator,sd_len);
+                                prev_C2i,next_C2i,prev_C2j,next_C2j,C2C2_mu,C2C2_sd,tol,weight_nn,nominator,denominator);
                         if (has_C1i && has_C1j) // C1C1: C1'[i]-C1'[j]
                             successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_C1i,has_next_C1i,has_prev_C1j,has_next_C1j,
-                                prev_C1i,next_C1i,prev_C1j,next_C1j,C1C1_mu,C1C1_sd,tol,weight_nn,nominator,denominator,sd_len);
+                                prev_C1i,next_C1i,prev_C1j,next_C1j,C1C1_mu,C1C1_sd,tol,weight_nn,nominator,denominator);
                         if (has_O4i && has_O4j) // O4O4: O4'[i]-O4'[j]
                             successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_O4i,has_next_O4i,has_prev_O4j,has_next_O4j,
-                                prev_O4i,next_O4i,prev_O4j,next_O4j,O4O4_mu,O4O4_sd,tol,weight_nn,nominator,denominator,sd_len);
+                                prev_O4i,next_O4i,prev_O4j,next_O4j,O4O4_mu,O4O4_sd,tol,weight_nn,nominator,denominator);
                         if (has_O3i && has_O3j) // O3O3: O3'[i]-O3'[j]
                             successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_O3i,has_next_O3i,has_prev_O3j,has_next_O3j,
-                                prev_O3i,next_O3i,prev_O3j,next_O3j,O3O3_mu,O3O3_sd,tol,weight_nn,nominator,denominator,sd_len);
+                                prev_O3i,next_O3i,prev_O3j,next_O3j,O3O3_mu,O3O3_sd,tol,weight_nn,nominator,denominator);
                         if (has_Nxi && has_Nxj) //   NN: N[i]-N[j]
                             successtest+=bp_nn_score(previnextj,nextiprevj,has_prev_Nxi,has_next_Nxi,has_prev_Nxj,has_next_Nxj,
-                                prev_Nxi,next_Nxi,prev_Nxj,next_Nxj,  NN_mu,  NN_sd,tol,weight_nn,nominator,denominator,sd_len);
+                                prev_Nxi,next_Nxi,prev_Nxj,next_Nxj,  NN_mu,  NN_sd,tol,weight_nn,nominator,denominator);
                     }
                     if (weight_tor>0)
                     {
                         successtest--;
-                        if (has_next_Pi  && has_Pi  && has_Pj  && has_next_Pj ) successtest+=bp_tor_score( next_Pi, Pi, Pj, next_Pj, Pp_mu, Pp_sd, tol,weight_tor,nominator,denominator,sd_tor); //  Pp:  P[i+1]-P[i]-P[j]-P[j-1]
-                        if (has_next_O5i && has_O5i && has_O5j && has_next_O5j) successtest+=bp_tor_score(next_O5i,O5i,O5j,next_O5j,O5p_mu,O5p_sd, tol,weight_tor,nominator,denominator,sd_tor); // O5p: O5'[i+1]-O5'[i]-O5'[j]-O5'[j-1]
-                        if (has_next_C5i && has_C5i && has_C5j && has_next_C5j) successtest+=bp_tor_score(next_C5i,C5i,C5j,next_C5j,C5p_mu,C5p_sd, tol,weight_tor,nominator,denominator,sd_tor); // C5p: C5'[i+1]-C5'[i]-C5'[j]-C5'[j-1]
-                        if (has_next_C4i && has_C4i && has_C4j && has_next_C4j) successtest+=bp_tor_score(next_C4i,C4i,C4j,next_C4j,C4p_mu,C4p_sd, tol,weight_tor,nominator,denominator,sd_tor); // C4p: C4'[i+1]-C4'[i]-C4'[j]-C4'[j-1]
-                        if (has_next_C3i && has_C3i && has_C3j && has_next_C3j) successtest+=bp_tor_score(next_C3i,C3i,C3j,next_C3j,C3p_mu,C3p_sd, tol,weight_tor,nominator,denominator,sd_tor); // C3p: C3'[i+1]-C3'[i]-C3'[j]-C3'[j-1]
-                        if (has_next_C2i && has_C2i && has_C2j && has_next_C2j) successtest+=bp_tor_score(next_C2i,C2i,C2j,next_C2j,C2p_mu,C2p_sd, tol,weight_tor,nominator,denominator,sd_tor); // C2p: C2'[i+1]-C2'[i]-C2'[j]-C2'[j-1]
-                        if (has_next_C1i && has_C1i && has_C1j && has_next_C1j) successtest+=bp_tor_score(next_C1i,C1i,C1j,next_C1j,C1p_mu,C1p_sd, tol,weight_tor,nominator,denominator,sd_tor); // C1p: C1'[i+1]-C1'[i]-C1'[j]-C1'[j-1]
-                        if (has_next_O4i && has_O4i && has_O4j && has_next_O4j) successtest+=bp_tor_score(next_O4i,O4i,O4j,next_O4j,O4p_mu,O4p_sd, tol,weight_tor,nominator,denominator,sd_tor); // O4p: O4'[i+1]-O4'[i]-O4'[j]-O4'[j-1]
-                        if (has_prev_O3i && has_O3i && has_O3j && has_prev_O3j) successtest+=bp_tor_score(prev_O3i,O3i,O3j,prev_O3j,O3m_mu,O3m_sd, tol,weight_tor,nominator,denominator,sd_tor); // O3m: O3'[i-1]-O3'[i]-O3'[j]-O3'[j+1]
+                        if (has_next_Pi  && has_Pi  && has_Pj  && has_next_Pj ) successtest+=bp_tor_score( next_Pi, Pi, Pj, next_Pj, Pp_mu, Pp_sd, tol,weight_tor,nominator,denominator); //  Pp:  P[i+1]-P[i]-P[j]-P[j-1]
+                        if (has_next_O5i && has_O5i && has_O5j && has_next_O5j) successtest+=bp_tor_score(next_O5i,O5i,O5j,next_O5j,O5p_mu,O5p_sd, tol,weight_tor,nominator,denominator); // O5p: O5'[i+1]-O5'[i]-O5'[j]-O5'[j-1]
+                        if (has_next_C5i && has_C5i && has_C5j && has_next_C5j) successtest+=bp_tor_score(next_C5i,C5i,C5j,next_C5j,C5p_mu,C5p_sd, tol,weight_tor,nominator,denominator); // C5p: C5'[i+1]-C5'[i]-C5'[j]-C5'[j-1]
+                        if (has_next_C4i && has_C4i && has_C4j && has_next_C4j) successtest+=bp_tor_score(next_C4i,C4i,C4j,next_C4j,C4p_mu,C4p_sd, tol,weight_tor,nominator,denominator); // C4p: C4'[i+1]-C4'[i]-C4'[j]-C4'[j-1]
+                        if (has_next_C3i && has_C3i && has_C3j && has_next_C3j) successtest+=bp_tor_score(next_C3i,C3i,C3j,next_C3j,C3p_mu,C3p_sd, tol,weight_tor,nominator,denominator); // C3p: C3'[i+1]-C3'[i]-C3'[j]-C3'[j-1]
+                        if (has_next_C2i && has_C2i && has_C2j && has_next_C2j) successtest+=bp_tor_score(next_C2i,C2i,C2j,next_C2j,C2p_mu,C2p_sd, tol,weight_tor,nominator,denominator); // C2p: C2'[i+1]-C2'[i]-C2'[j]-C2'[j-1]
+                        if (has_next_C1i && has_C1i && has_C1j && has_next_C1j) successtest+=bp_tor_score(next_C1i,C1i,C1j,next_C1j,C1p_mu,C1p_sd, tol,weight_tor,nominator,denominator); // C1p: C1'[i+1]-C1'[i]-C1'[j]-C1'[j-1]
+                        if (has_next_O4i && has_O4i && has_O4j && has_next_O4j) successtest+=bp_tor_score(next_O4i,O4i,O4j,next_O4j,O4p_mu,O4p_sd, tol,weight_tor,nominator,denominator); // O4p: O4'[i+1]-O4'[i]-O4'[j]-O4'[j-1]
+                        if (has_prev_O3i && has_O3i && has_O3j && has_prev_O3j) successtest+=bp_tor_score(prev_O3i,O3i,O3j,prev_O3j,O3m_mu,O3m_sd, tol,weight_tor,nominator,denominator); // O3m: O3'[i-1]-O3'[i]-O3'[j]-O3'[j+1]
                     }
                     if (weight_ang>0)
                     {
                         successtest--;
-                        if (has_next_Pi  && has_Pi  && has_prev_Pj  && has_Pj ) successtest+=bp_ang_score( next_Pi, Pi, prev_Pj, Pj, aPp_mu, aPp_sd, tol,weight_ang,nominator,denominator,sd_ang); //  aPp:      <P[i+1]P[i],P[j-1]P[j]>
-                        if (has_next_O5i && has_O5i && has_prev_O5j && has_O5j) successtest+=bp_ang_score(next_O5i,O5i,prev_O5j,O5j,aO5p_mu,aO5p_sd, tol,weight_ang,nominator,denominator,sd_ang); // aO5p: <O5'[i+1]O5'[i],O5'[j-1]O5'[j]> 
-                        if (has_next_C5i && has_C5i && has_prev_C5j && has_C5j) successtest+=bp_ang_score(next_C5i,C5i,prev_C5j,C5j,aC5p_mu,aC5p_sd, tol,weight_ang,nominator,denominator,sd_ang); // aC5p: <C5'[i+1]C5'[i],C5'[j-1]C5'[j]> 
-                        if (has_next_C4i && has_C4i && has_prev_C4j && has_C4j) successtest+=bp_ang_score(next_C4i,C4i,prev_C4j,C4j,aC4p_mu,aC4p_sd, tol,weight_ang,nominator,denominator,sd_ang); // aC4p: <C4'[i+1]C4'[i],C4'[j-1]C4'[j]> 
-                        if (has_next_C3i && has_C3i && has_prev_C3j && has_C3j) successtest+=bp_ang_score(next_C3i,C3i,prev_C3j,C3j,aC3p_mu,aC3p_sd, tol,weight_ang,nominator,denominator,sd_ang); // aC3p: <C3'[i+1]C3'[i],C3'[j-1]C3'[j]> 
-                        if (has_next_C2i && has_C2i && has_prev_C2j && has_C2j) successtest+=bp_ang_score(next_C2i,C2i,prev_C2j,C2j,aC2p_mu,aC2p_sd, tol,weight_ang,nominator,denominator,sd_ang); // aC2p: <C2'[i+1]C2'[i],C2'[j-1]C2'[j]> 
-                        if (has_next_C1i && has_C1i && has_prev_C1j && has_C1j) successtest+=bp_ang_score(next_C1i,C1i,prev_C1j,C1j,aC1p_mu,aC1p_sd, tol,weight_ang,nominator,denominator,sd_ang); // aC1p: <C1'[i+1]C1'[i],C1'[j-1]C1'[j]> 
-                        if (has_next_O4i && has_O4i && has_prev_O4j && has_O4j) successtest+=bp_ang_score(next_O4i,O4i,prev_O4j,O4j,aO4p_mu,aO4p_sd, tol,weight_ang,nominator,denominator,sd_ang); // aO4p: <O4'[i+1]O4'[i],O4'[j-1]O4'[j]> 
-                        if (has_next_O3i && has_O3i && has_prev_O3j && has_O3j) successtest+=bp_ang_score(next_O3i,O3i,prev_O3j,O3j,aO3p_mu,aO3p_sd, tol,weight_ang,nominator,denominator,sd_ang); // aO3p: <O3'[i+1]O3'[i],O3'[j-1]O3'[j]> 
-                        if (has_C4i      && has_C1i && has_C4j      && has_C1j)//successtest+=bp_ang_score(    C4i,C1i,     C4j,C1j, aCC_mu, aCC_sd, tol,weight_ang,nominator,denominator,sd_ang); //  aCC:    <C4'[i]C1'[i],C4'[j]C1'[j]>
+                        if (has_next_Pi  && has_Pi  && has_prev_Pj  && has_Pj ) successtest+=bp_ang_score( next_Pi, Pi, prev_Pj, Pj, aPp_mu, aPp_sd, tol,weight_ang,nominator,denominator); //  aPp:      <P[i+1]P[i],P[j-1]P[j]>
+                        if (has_next_O5i && has_O5i && has_prev_O5j && has_O5j) successtest+=bp_ang_score(next_O5i,O5i,prev_O5j,O5j,aO5p_mu,aO5p_sd, tol,weight_ang,nominator,denominator); // aO5p: <O5'[i+1]O5'[i],O5'[j-1]O5'[j]> 
+                        if (has_next_C5i && has_C5i && has_prev_C5j && has_C5j) successtest+=bp_ang_score(next_C5i,C5i,prev_C5j,C5j,aC5p_mu,aC5p_sd, tol,weight_ang,nominator,denominator); // aC5p: <C5'[i+1]C5'[i],C5'[j-1]C5'[j]> 
+                        if (has_next_C4i && has_C4i && has_prev_C4j && has_C4j) successtest+=bp_ang_score(next_C4i,C4i,prev_C4j,C4j,aC4p_mu,aC4p_sd, tol,weight_ang,nominator,denominator); // aC4p: <C4'[i+1]C4'[i],C4'[j-1]C4'[j]> 
+                        if (has_next_C3i && has_C3i && has_prev_C3j && has_C3j) successtest+=bp_ang_score(next_C3i,C3i,prev_C3j,C3j,aC3p_mu,aC3p_sd, tol,weight_ang,nominator,denominator); // aC3p: <C3'[i+1]C3'[i],C3'[j-1]C3'[j]> 
+                        if (has_next_C2i && has_C2i && has_prev_C2j && has_C2j) successtest+=bp_ang_score(next_C2i,C2i,prev_C2j,C2j,aC2p_mu,aC2p_sd, tol,weight_ang,nominator,denominator); // aC2p: <C2'[i+1]C2'[i],C2'[j-1]C2'[j]> 
+                        if (has_next_C1i && has_C1i && has_prev_C1j && has_C1j) successtest+=bp_ang_score(next_C1i,C1i,prev_C1j,C1j,aC1p_mu,aC1p_sd, tol,weight_ang,nominator,denominator); // aC1p: <C1'[i+1]C1'[i],C1'[j-1]C1'[j]> 
+                        if (has_next_O4i && has_O4i && has_prev_O4j && has_O4j) successtest+=bp_ang_score(next_O4i,O4i,prev_O4j,O4j,aO4p_mu,aO4p_sd, tol,weight_ang,nominator,denominator); // aO4p: <O4'[i+1]O4'[i],O4'[j-1]O4'[j]> 
+                        if (has_next_O3i && has_O3i && has_prev_O3j && has_O3j) successtest+=bp_ang_score(next_O3i,O3i,prev_O3j,O3j,aO3p_mu,aO3p_sd, tol,weight_ang,nominator,denominator); // aO3p: <O3'[i+1]O3'[i],O3'[j-1]O3'[j]> 
+                        if (has_C4i      && has_C1i && has_C4j      && has_C1j)//successtest+=bp_ang_score(    C4i,C1i,     C4j,C1j, aCC_mu, aCC_sd, tol,weight_ang,nominator,denominator); //  aCC:    <C4'[i]C1'[i],C4'[j]C1'[j]>
                         {
                             ang=rad2deg(Points4Angle(C4i,C1i,C4j,C1j));
                             if(ang>=-180)
@@ -1030,16 +997,9 @@ void cssr(const ModelUnit &pdb_entry, vector<string>&res_str_vec,
                         }
                     }
                     
-                    if (denominator>0) bp_vec.push_back(pair<float,vector<string> >(
-                        nominator/denominator+adjust1*successtest/totaltest+
-                        adjust2*adjuststd(sd_len,sd_nn,sd_tor,sd_ang,
-                            sd_len_mean,sd_nn_mean,sd_tor_mean,sd_ang_mean,
-                            weight_len,weight_nn,weight_tor,weight_ang)+adjust3, tmp_bp));
-
-                    sd_len.clear();
-                    sd_nn.clear();
-                    sd_tor.clear();
-                    sd_ang.clear();
+                    if (denominator>0) bp_vec.push_back(
+                        pair<float,vector<string> >(nominator/denominator+
+                        adjust1*successtest/totaltest+adjust3, tmp_bp));
                 }
             }
         }
