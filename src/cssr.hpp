@@ -226,6 +226,53 @@ void cssr_bp2dot(const vector<string>&res_str_vec,
     return;
 }
 
+
+void cssr_bpseq(const vector<string>&res_str_vec,
+    const vector<size_t>&filtered_bp_vec,
+    const vector<pair<float,vector<string> > >&bp_vec,
+    vector<vector<int> >&bpseq_vec)
+{
+    /* initialize bpseq */
+    size_t Lch=res_str_vec.size();
+    vector<int> tmp_int(3,0);
+    bpseq_vec.assign(Lch,tmp_int);
+    tmp_int.clear();
+
+    /* map residue to string */
+    vector<pair<string,size_t> > res2int_vec;
+    size_t r;
+    for (r=0;r<Lch;r++)
+        res2int_vec.push_back(pair<string,size_t>(res_str_vec[r],r));
+    map<string, size_t> res2int_map(res2int_vec.begin(),res2int_vec.end());
+    vector<pair<string, size_t> >().swap(res2int_vec);
+
+    /* initialize sequence */
+    int p;
+    for (r=0;r<Lch;r++)
+    {
+        for (p=0;p<res_str_vec[r].size();p++)
+            if (res_str_vec[r][p]=='.') break;
+        if (p==res_str_vec[r].size()) p==-1;
+        bpseq_vec[r][0]=atoi(res_str_vec[r].substr(p+2).c_str());
+        bpseq_vec[r][1]=res_str_vec[r][p+1];
+    }
+
+
+    /* fill in base pair */
+    size_t r1,r2,bp;
+    for (bp=0;bp<bp_vec.size();bp++)
+    {
+        if (find(filtered_bp_vec.begin(), filtered_bp_vec.end(),bp
+            )==filtered_bp_vec.end()) continue;
+        r1=res2int_map[bp_vec[bp].second[0]];
+        r2=res2int_map[bp_vec[bp].second[1]];
+        bpseq_vec[r1][2]=r2;
+        bpseq_vec[r2][2]=r1;
+    }
+    map<string, size_t>().swap(res2int_map);
+    return;
+}
+
 /* if a residue is paired with multiple other residues, just keep the
  * highest scoring residue pair */
 void filter_bp(const vector<pair<float,vector<string> > >&bp_vec,
