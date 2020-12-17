@@ -3,8 +3,7 @@ import sys
 import argparse
 from glob import glob
 import subprocess
-sys.path.append('/home/mah258/Pyle/utils')
-from utils import *
+from parse import *
 
 def main():
     img, seqs, labs, conf, output = sys.argv[1:]
