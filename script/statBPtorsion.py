@@ -11,6 +11,8 @@ matplotlib.use("agg")
 from matplotlib import pyplot as plt
 import numpy as np
 
+#import scipy.stats
+
 def statBPtorsion(rawfile):
     data=[]
     bptype_list=[]
@@ -104,12 +106,14 @@ def statBPtorsion(rawfile):
     bins=np.arange(-180,181,1)
     xticks=range(-180,181,60)
     for a in range(20):
+        print(angle_list[a])
         if a % 2 ==0:
             plt.subplot(10,5,5*a/2+1)
         else:
             plt.subplot(10,5,5*(a-1)/2+2)
         ymax=0
         angle_data=data[:,a]
+        angle_data=angle_data[angle_data>=-180]
         mean=angle_data.mean()
         std =angle_data.std()
         angle_data2=np.array(angle_data)
@@ -128,6 +132,7 @@ def statBPtorsion(rawfile):
             width=1, align="left", label=label)[0]
         for l,name in enumerate(name_list):
             angle_data=data[bptype_array==name,a]
+            angle_data=angle_data[angle_data>=-180]
             mean=angle_data.mean()
             std =angle_data.std()
             angle_data2=np.array(angle_data)
@@ -159,10 +164,15 @@ def statBPtorsion(rawfile):
     xticks=range(8,25,4)
     for a in range(20,30):
         plt.subplot(10,5,5*(a-20)+3)
+        print(angle_list[a])
         ymax=0
         angle_data=data[:,a]
+        angle_data=angle_data[angle_data>0]
+        #mean, std = scipy.stats.norm.fit(angle_data, 
+            #loc=angle_data.mean(),
+            #scale=angle_data.std())
         mean=angle_data.mean()
-        std =angle_data.std()
+        std=angle_data.std()
         label="all(%.3f,%.3f)"%(mean,std)
         BPtorsion_txt+="%s\t%.3f\t%.3f\t"%(angle_list[a],mean,std)
         n=plt.hist(angle_data,bins=bins,
@@ -170,8 +180,11 @@ def statBPtorsion(rawfile):
             width=1, align="left", label=label)[0]
         for l,name in enumerate(name_list):
             angle_data=data[bptype_array==name,a]
+            #mean, std = scipy.stats.norm.fit(angle_data,
+                #loc=angle_data.mean(),
+                #scale=angle_data.std())
             mean=angle_data.mean()
-            std =angle_data.std()
+            std=angle_data.std()
             label="%s(%.3f,%.3f)"%(name.replace("Wobble","g/u"),mean,std)
             BPtorsion_txt+="%.3f\t%.3f\t"%(mean,std)
             n=plt.hist(angle_data,bins=bins,
@@ -189,12 +202,20 @@ def statBPtorsion(rawfile):
     bins=np.arange(0,181,1)
     xticks=range(0,181,30)
     for a in range(30,50):
+        print(angle_list[a])
         if a % 2 ==0:
             plt.subplot(10,5,5*(a-30)/2+4)
         else:
             plt.subplot(10,5,5*(a-31)/2+5)
         ymax=0
         angle_data=data[:,a]
+        angle_data=angle_data[angle_data>=0]
+        #fa,fb,mean,std=scipy.stats.truncnorm.fit(angle_data,
+            #loc=angle_data.mean(),
+            #scale=angle_data.std(),
+            #fa=0,
+            #fb=180,
+            #)
         mean=angle_data.mean()
         std =angle_data.std()
         label="all(%.2f,%.2f)"%(mean,std)
@@ -204,6 +225,13 @@ def statBPtorsion(rawfile):
             width=1, align="left", label=label)[0]
         for l,name in enumerate(name_list):
             angle_data=data[bptype_array==name,a]
+            angle_data=angle_data[angle_data>=0]
+            #fa,fb,mean,std=scipy.stats.truncnorm.fit(angle_data,
+                #loc=angle_data.mean(),
+                #scale=angle_data.std(),
+                #fa=0,
+                #fb=180,
+                #)
             mean=angle_data.mean()
             std =angle_data.std()
             label="%s(%.2f,%.2f)"%(name.replace("Wobble","g/u"),mean,std)
