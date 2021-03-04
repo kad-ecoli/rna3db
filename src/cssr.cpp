@@ -6,7 +6,8 @@ const char* docstring=""
 "    1 - dot bracket format\n"
 "    2 - (default) DSSR format\n"
 "    4 - confidence score\n"
-"    8 - inter-chain base pairs only\n"
+"    8 - inter-chain base pairs only (must be added to other option)\n"
+"   16 - BPseq (single chain only)\n"
 "atom: atom used for assignment. default is all the following atoms:\n"
 "    \" P  \", \" O5'\", \" O4'\", \" O3'\", \" C5'\", \" C4'\", \" C3'\", \" C2'\", \" C1'\"\n"
 "    and N (N9 for a/g; N1 for c/t/u)\n"
@@ -30,7 +31,8 @@ int main(int argc,char **argv)
     bool show_dot    =(outfmt%2==1); outfmt/=2;
     bool show_dssr   =(outfmt%2==1); outfmt/=2;
     bool show_conf   =(outfmt%2==1); outfmt/=2;
-    bool interchain  =(outfmt%2==1);
+    bool interchain  =(outfmt%2==1); outfmt/=2;
+    bool show_bpseq  =(outfmt%2==1);
     
     int atomic_detail=2;
     int allowX       =1; // only allow ATOM and MSE
@@ -55,7 +57,8 @@ int main(int argc,char **argv)
     /* output */
     size_t bp;
     vector<size_t> filtered_bp_vec;
-    if (show_dot || show_dssr) filter_bp(bp_vec, filtered_bp_vec);
+    if (show_dot || show_dssr || show_bpseq)
+        filter_bp(bp_vec, filtered_bp_vec);
     if (show_dot)
     {
         vector<char> dot_bracket;
@@ -86,7 +89,6 @@ int main(int argc,char **argv)
             cout<<endl;
         }
     }
-    vector<size_t>().swap(filtered_bp_vec);
     if (show_conf && bp_vec.size())
     {
         sort(bp_vec.begin(), bp_vec.end());
@@ -94,8 +96,19 @@ int main(int argc,char **argv)
             cout<<bp_vec[bp].second[0]<<'\t'<<bp_vec[bp].second[1]<<'\t'
                 <<bp_vec[bp].first<<endl;
     }
+    if (show_bpseq)
+    {
+        vector<vector<int> > bpseq_vec;
+        cssr_bpseq(res_str_vec, filtered_bp_vec, bp_vec, bpseq_vec);
+        for (size_t r=0;r<bpseq_vec.size();r++)
+            cout<<setw(5)<<bpseq_vec[r][0]<<' '
+                <<(char)(bpseq_vec[r][1])<<' '
+                <<setw(5)<<bpseq_vec[r][2]<<endl;
+        vector<vector<int> >().swap(bpseq_vec);
+    }
 
     /* clean up */
+    vector<size_t>().swap(filtered_bp_vec);
     vector<string>().swap(res_str_vec);
     vector<pair<float,vector<string> > >().swap(bp_vec);
     vector<ChainUnit>().swap(pdb_entry.chains);
