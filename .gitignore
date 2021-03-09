@@ -13,6 +13,7 @@ ligand-expo/DT/
 ligand-expo/G/
 ligand-expo/U/
 
+src/AllDist
 src/MissingRNAatom
 src/NaTorsion
 src/BPtorsion
