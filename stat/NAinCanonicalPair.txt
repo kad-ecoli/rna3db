@@ -1,0 +1,29 @@
+#### number of nucleotide in sequence ####
+a	64904
+u	55271
+c	57113
+g	73506
+#### Number of nucleotide combination in sequence ####
+a-a	16769444
+u-a	13239368
+c-a	13630800
+g-a	18442881
+a-u	14577050
+u-u	11703067
+c-u	11749955
+g-u	15911745
+a-c	14334794
+u-c	11138619
+c-c	13084257
+g-c	17474195
+a-g	18862596
+u-g	14701657
+c-g	17034442
+g-g	22896590
+#### number of nucleotide in base pair ####
+#base	upsteam	downstream	total
+a	9263	9222	18485
+u	12297	12609	24906
+c	18891	19529	38420
+g	22875	21966	44841
+#### Number of nucleotide combination in base pair ####
