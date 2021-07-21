@@ -252,7 +252,7 @@ void cssr_bpseq(const vector<string>&res_str_vec,
     {
         for (p=0;p<res_str_vec[r].size();p++)
             if (res_str_vec[r][p]=='.') break;
-        if (p==res_str_vec[r].size()) p==-1;
+        if (p==res_str_vec[r].size()) p=-1;
         bpseq_vec[r][0]=atoi(res_str_vec[r].substr(p+2).c_str());
         bpseq_vec[r][1]=res_str_vec[r][p+1];
     }
