@@ -23,7 +23,5 @@ src/NAbuilder
 src/*.pdb
 src/*.dssr
 
-stat/*png
 stat/*gz
-stat/*txt
 stat/*hpp
