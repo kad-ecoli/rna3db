@@ -24,14 +24,27 @@ for chain in `cat $rootdir/pdb/derived_data/na_chain.list`;do
     if [ ! -s "${pdb}/${chain}.pdb.gz" ];then
         cd $rootdir/pdb/data/structures/all/pdb/$pdb
         $bindir/fetch.py $chain
-        gzip ${chain}.pdb
+	if [ ! -s "${chain}.pdb" ];then
+	    if [ ! -s "${pdb}.cif" ];then
+                $bindir/fetch.py -outfmt=cif $pdb
+	    fi
+	    $bindir/cif2pdb ${pdb}.cif ${chain}.pdb -chain `echo $chain|cut -c5-`
+	fi
+	if [ -s "${chain}.pdb" ];then
+            gzip ${chain}.pdb
+	fi
         cd $rootdir/pdb/data/structures/all/pdb/
     fi
 done
-rm `find -type f|grep -P "/[\da-z]{4}\.pdb"` `find -type f|grep pdb-bundle.tar.gz`
+rm `find -type f|grep -v ".pdb.gz$"`
 $bindir/getNAtype.py $rootdir/pdb/derived_data/na_chain.list $rootdir/pdb/derived_data/na_type.list
 $bindir/getRNAlist.py $rootdir/pdb/derived_data/na_chain.list $rootdir/pdb/derived_data/na_type.list $rootdir/pdb/derived_data/na_chain.list
 $bindir/removeDNAchain.py $rootdir/pdb/derived_data/na_type.list
 
 echo "Download resolution"
 wget -q ftp://ftp.wwpdb.org/pub/pdb/derived_data/index/resolu.idx -O $rootdir/pdb/derived_data/index/resolu.idx
+
+echo "Download release date"
+for pdb in `cut -c1-4 $rootdir/pdb/derived_data/na_chain.list|uniq`;do 
+    echo $pdb `$bindir/get_pdb_release_date.sh $pdb`|sed 's/ /\t/g'
+done > $rootdir/pdb/derived_data/na_chain.date 

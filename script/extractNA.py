@@ -29,6 +29,8 @@ for block in blocks:
     if lines[0].split()[1]!="mol:na":
         continue
     sequence=''.join(lines[1:])
+    if len(sequence)<10:
+        continue
     txt+='>'+lines[0]+'\n'+sequence+'\n'
 
 fp=open(outfile,'w')
