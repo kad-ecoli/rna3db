@@ -76,4 +76,19 @@ for resolu_cs in $resolu_cs_list;do
 	    $bindir/x3dna-dssr -i=$target.pdb --pair-only -o=DSSR/$target.dssr
 	fi
     done
+    
+    echo "fill missing atoms"
+    cd $rootdir/dimer/$resolu_cs
+    for target in `cat list`;do
+	$bindir/MissingRNAatom ${target}.pdb ${target}.pdb 5
+    done
+    $bindir/clstr2txt.py $rootdir/dimer/pdb_atom.sort.${resolu_cs}.clstr $rootdir/dimer/pdb_atom.sort.${resolu_cs}.txt
+    $bindir/pdb2xyz -dir ./ list -suffix .pdb -atom " C3'" > C3.xyz
+    $bindir/pdb2xyz -dir ./ list -suffix .pdb -atom " C4'" > C4.xyz
+    $bindir/pdb2xyz -dir ./ list -suffix .pdb -atom " C5'" > C5.xyz
+    $bindir/pdb2xyz -dir ./ list -suffix .pdb -atom " O5'" > O5.xyz
+    $bindir/pdb2xyz -dir ./ list -suffix .pdb -atom " O3'" > O3.xyz
+    $bindir/pdb2xyz -dir ./ list -suffix .pdb -atom " P  " >  P.xyz
+    cd $rootdir/dimer
+    tar -cjvf ${resolu_cs}.tar.bz2 ${resolu_cs}/list* ${resolu_cs}/*.pdb ${resolu_cs}/*.xyz pdb_atom.sort.${resolu_cs}.txt
 done
