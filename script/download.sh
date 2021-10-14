@@ -48,3 +48,11 @@ echo "Download release date"
 for pdb in `cut -c1-4 $rootdir/pdb/derived_data/na_chain.list|uniq`;do 
     echo $pdb `$bindir/get_pdb_release_date.sh $pdb`|sed 's/ /\t/g'
 done > $rootdir/pdb/derived_data/na_chain.date 
+
+echo "clean PDB"
+cd       $rootdir/pdb/data/structures/all/pdb/
+ls */*.pdb.gz | cut -f1 -d. > list
+$bindir/clean_pdb.py -dir=./ list -suffix=.pdb.gz .pdb
+for target in `cat list`;do
+    gzip -f ${target}.pdb
+done
