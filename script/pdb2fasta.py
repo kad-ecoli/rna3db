@@ -180,7 +180,7 @@ def pdbtxt2seq(txt='',infile='pdb.pdb',PERMISSIVE="TER",outfmt="PDB",
         
         # underscore for empty chain identifier
         chain_id=line[21].replace(' ','_')
-        res_num=int(line[22:26]) # residue sequence number
+        res_num=line[22:27] # residue sequence number
         aa='X'
         if residue in aa3to1:
             aa=aa3to1[residue]
