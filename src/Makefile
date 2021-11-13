@@ -2,7 +2,7 @@ CC=g++
 CFLAGS=-O3
 LDFLAGS=-static
 
-PROG=NaTorsion MissingRNAatom BPtorsion cssr newChainID NAbuilder AllDist
+PROG=NaTorsion MissingRNAatom BPtorsion cssr newChainID NAbuilder AllDist MissingResidue
 HEADER=PDBParser.hpp pstream.h GeometryTools.hpp
 
 all: ${PROG}
@@ -26,6 +26,9 @@ cssr: cssr.cpp cssr.hpp BPstat.hpp ${HEADER}
 	${CC} ${CFLAGS} $@.cpp -o $@ ${LDFLAGS}
 
 MissingRNAatom: MissingRNAatom.cpp MissingRNAatom.hpp Superpose.hpp IdealRNA.hpp ${HEADER}
+	${CC} ${CFLAGS} $@.cpp -o $@ ${LDFLAGS}
+
+MissingResidue: MissingResidue.cpp MissingResidue.hpp ${HEADER}
 	${CC} ${CFLAGS} $@.cpp -o $@ ${LDFLAGS}
 
 install: ${PROG}
