@@ -205,11 +205,12 @@ void RandomSphereSampling(vector<float> &xyz,float d=3.8)
 
 /* clash_cut=3.4 - van der Waals diameter of carbon + 0.1 */
 float getClash(const vector<vector<float> >&xyz_full, 
-    const vector<vector<int> >&int_coor_array, const vector<bool>&miss_list,
-    const int resi, const float clash_cut=3.5)
+    const vector<vector<int> >&int_coor_array,
+    const vector<bool>&miss_list, const int resi)
 {
     int L=xyz_full.size();
-    float clash_cut2=clash_cut*clash_cut;
+    float clash_cut2=4.0*4.0; // non-adjacent atoms
+    float clash_nei2=3.5*3.5; // adjacent atoms
     float clash_score=0;
     int i;
     float dx,dy,dz,d2;
@@ -231,7 +232,9 @@ float getClash(const vector<vector<float> >&xyz_full,
         dx=resi_xyz[0]-xyz_full[i][0];
         dy=resi_xyz[1]-xyz_full[i][1];
         dz=resi_xyz[2]-xyz_full[i][2];
-        d2=clash_cut2-(dx*dx+dy*dy+dz*dz);
+        if (resi==i)             d2=0;
+        else if (abs(resi-i)==1) d2=clash_nei2-(dx*dx+dy*dy+dz*dz);
+        else                     d2=clash_cut2-(dx*dx+dy*dy+dz*dz);
         if (d2>clash_score) clash_score=d2;
     }
     vector<int>   ().swap(resi_xyz_int);
