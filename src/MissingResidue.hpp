@@ -44,18 +44,21 @@ void readOneSequenceFromFasta(const string & infasta, string &sequence,
     bool use_stdin=(infasta=="-");
     if (!use_stdin) fp.open(infasta.c_str(),ios::in);
     string line;
+    string sequence_tmp="";
+    int r;
     while(use_stdin?cin.good():fp.good())
     {
         if (use_stdin) getline(cin,line);
         else           getline(fp,line);
         if (line.size()==0 || line[0]=='>' || line[0]=='#') continue;
-        sequence+=line;
+        sequence_tmp+=line;
     }
     line.clear();
-    if (mol_opt>0) transform(sequence.begin(), sequence.end(), sequence.begin(),
-        [](unsigned char c){ return std::tolower(c); }); // RNA
-    else if (mol_opt<0) transform(sequence.begin(), sequence.end(), sequence.begin(),
-        [](unsigned char c){ return std::toupper(c); }); // protein
+    if (mol_opt>0) for (r=0;r<sequence_tmp.size();r++) 
+        sequence+=tolower(sequence_tmp[r]);
+    else           for (r=0;r<sequence_tmp.size();r++) 
+        sequence+=toupper(sequence_tmp[r]);
+    sequence_tmp.clear();
     return;
 }
 
