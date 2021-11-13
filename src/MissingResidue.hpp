@@ -190,22 +190,54 @@ void appendNewResidue(const string & sequence,ChainUnit & chain,
     return;
 }
 
-void RandomSphereSampling(vector<vector<float> >&cart_coor_array,float d=3.8)
+void RandomSphereSampling(vector<float> &xyz,float d=3.8)
 {
     float z,theta;
-    int i;
-    for (i=0;i<cart_coor_array.size();i++)
-    {
-        z=2*RUNIF-1;
-        theta=RUNIF*2*PI;
-        cart_coor_array[i][0]=d*sqrt(1-z*z)*cos(theta); // x
-        cart_coor_array[i][1]=d*sqrt(1-z*z)*sin(theta); // y
-        cart_coor_array[i][2]=d*z;
-    }
+    z=2*RUNIF-1;
+    theta=RUNIF*2*PI;
+    xyz[0]=d*sqrt(1-z*z)*cos(theta); // x
+    xyz[1]=d*sqrt(1-z*z)*sin(theta); // y
+    xyz[2]=d*z;
 }
 
-void fillLoop(int rstart, int rend, vector<vector<float> >&xyz_full,
-    vector<bool>&miss_list, float d=3.8)
+/* clash_cut=3.4 - van der Waals diameter of carbon + 0.1 */
+float getClash(const vector<vector<float> >&xyz_full, 
+    const vector<vector<int> >&int_coor_array, const vector<bool>&miss_list,
+    const int resi, const float clash_cut=3.5)
+{
+    int L=xyz_full.size();
+    float clash_cut2=clash_cut*clash_cut;
+    float clash_score=0;
+    int i;
+    float dx,dy,dz,d2;
+    vector<int>   resi_xyz_int(3,0);
+    vector<float> resi_xyz(3,0);
+    resi_xyz_int[0]=int_coor_array[resi][0];
+    resi_xyz_int[1]=int_coor_array[resi][1];
+    resi_xyz_int[2]=int_coor_array[resi][2];
+    resi_xyz[0]    =      xyz_full[resi][0];
+    resi_xyz[1]    =      xyz_full[resi][1];
+    resi_xyz[2]    =      xyz_full[resi][2];
+
+    for (i=0;i<xyz_full.size();i++)
+    {
+        if (miss_list[i]) continue;
+        if (resi_xyz_int[0]!=int_coor_array[i][0] ||
+            resi_xyz_int[1]!=int_coor_array[i][1] ||
+            resi_xyz_int[2]!=int_coor_array[i][2]) continue;
+        dx=resi_xyz[0]-xyz_full[i][0];
+        dy=resi_xyz[1]-xyz_full[i][1];
+        dz=resi_xyz[2]-xyz_full[i][2];
+        d2=clash_cut2-(dx*dx+dy*dy+dz*dz);
+        if (d2>clash_score) clash_score=d2;
+    }
+    vector<int>   ().swap(resi_xyz_int);
+    vector<float> ().swap(resi_xyz);
+    return clash_score;
+}
+
+void fillLoop(int &rstart, int &rend, vector<vector<float> >&xyz_full,
+    vector<vector<int> >&int_coor_array, vector<bool>&miss_list, float d=3.8)
 {
     float l=0; // distance between anchors
     int M=rend-rstart+1; // number of missing atoms
@@ -215,83 +247,124 @@ void fillLoop(int rstart, int rend, vector<vector<float> >&xyz_full,
     vector<float> rotate_axis(3,0);
     vector<float> xyz(3,0);
     vector<float> xyz_old(3,0);
+    
+    vector<float> coor_prev(3,0);
+    vector<int> int_coor_prev(3,0);
     float theta, theta_max;
     float phi;
-    float z;
+    float z,zmin;
     float angle;
+    float Md;
+    int resi,resi_anchor;
+    int total_trial=5;
+    int Ntrial=0;
+    float clash_score=0;
+    float clash_score_best=0;
+    float shrink=1;
+
+    //cerr<<"filling residues "<<rstart<<" to "<<rend<<endl;
 
     while (rstart<=rend)
     {
         M=rend-rstart+1; // number of missing atoms
         l=Points2Distance(xyz_full[rstart-1],xyz_full[rend+1]);
-        if (M==1 && M*d<=l-d) 
+        Md=M*d;
+        if (M==1 && Md<=l-d) 
         {
             xyz_full[rstart][0]=(xyz_full[rstart-1][0]+xyz_full[rend+1][0])/2.;
             xyz_full[rstart][1]=(xyz_full[rstart-1][1]+xyz_full[rend+1][1])/2.;
             xyz_full[rstart][2]=(xyz_full[rstart-1][2]+xyz_full[rend+1][2])/2.;
+            int_coor_array[rstart][0]=xyz_full[rstart][0]/4;
+            int_coor_array[rstart][1]=xyz_full[rstart][1]/4;
+            int_coor_array[rstart][2]=xyz_full[rstart][2]/4;
             miss_list[rstart]=false;
             rstart++;
             rend--;
             break;
         }
+        
+        shrink=pow(0.95,M-1);
+        if (shrink<0.8) shrink=0.8;
+        Md*=shrink;
+        //Md*=0.9;
 
-        /* biased sphere sampling */
-        if (M*d<=l-d) theta=0;
+        if (toggle<0) subtract(xyz_full[rend+1],xyz_full[rstart-1],anchor_vec);
+        else          subtract(xyz_full[rstart-1],xyz_full[rend+1],anchor_vec);
+        angle=0;
+        if (l>Extra) angle=acos(anchor_vec[2]/l);
+        rotate_axis[0]= anchor_vec[1];
+        rotate_axis[1]=-anchor_vec[0];
+        rotate_axis[2]=0;
+
+        /* uniform cylinder sampling */
+        zmin=(d*d+l*l-Md*Md)/(2*l*d);
+        if      (zmin> 1) zmin= 1;
+        else if (zmin<-1) zmin=-1;
+        if (toggle<0)
+        {
+            resi=rstart;
+            resi_anchor=rstart-1;
+        }
         else
         {
-            if (M*d>=l+d) theta_max=PI;
-            else theta_max=acos((l*l+d*d+M*d*M*d)/(2*l*d));
-            theta=theta_max*RUNIF;
+            resi=rend;
+            resi_anchor=rend+1;
         }
-        phi=(2*RUNIF-1)*PI;
-        if (theta<PI/2)
-        {
-            xyz[0]=d*cos(phi)*sin(theta);
-            xyz[1]=d*sin(phi)*sin(theta);
-            xyz[2]=d*cos(theta);
-        }
-        else
-        {
-            z=-RUNIF;
+        //cerr<<"miss["<<resi<<"]="<<miss_list[resi]<<endl;
+
+        for (Ntrial=0;Ntrial<total_trial;Ntrial++)
+        {        
+            phi=(2*RUNIF-1)*PI;
+            z=RUNIF*(1-zmin)+zmin;
             xyz[0]=d*sqrt(1-z*z)*cos(phi);
             xyz[1]=d*sqrt(1-z*z)*sin(phi);
             xyz[2]=d*z;
-        }
 
-        /* rotate xyz according to anchor_vec */
-        if (l>Extra)
-        {
-            if (toggle<0) subtract(xyz_full[rend+1],xyz_full[rstart-1],anchor_vec);
-            else          subtract(xyz_full[rstart-1],xyz_full[rend+1],anchor_vec);
-            if (l>Extra)
+            /* rotate xyz according to anchor_vec */
+            if (l>Extra && angle>=Extra)
             {
-                angle=acos(anchor_vec[2]/l);
-                /* rotation axis is cross product between anchor_vec and z */
-                if (angle>=Extra)
-                {
-                    rotate_axis[0]= anchor_vec[1];
-                    rotate_axis[1]=-anchor_vec[0];
-                    rotate_axis[2]=0;
-                    xyz_old[0]=xyz[0];
-                    xyz_old[1]=xyz[1];
-                    xyz_old[2]=xyz[2];
-                    CoordinateRotation(xyz_old, rotate_axis, angle, xyz);
-                }
+                xyz_old[0]=xyz[0];
+                xyz_old[1]=xyz[1];
+                xyz_old[2]=xyz[2];
+                CoordinateRotation(xyz_old, rotate_axis, rad2deg(angle), xyz);
+            }
+            xyz_full[resi][0]=xyz_full[resi_anchor][0]+xyz[0];
+            xyz_full[resi][1]=xyz_full[resi_anchor][1]+xyz[1];
+            xyz_full[resi][2]=xyz_full[resi_anchor][2]+xyz[2];
+            int_coor_array[resi][0]=xyz_full[resi][0]/4;
+            int_coor_array[resi][1]=xyz_full[resi][1]/4;
+            int_coor_array[resi][2]=xyz_full[resi][2]/4;
+            if (zmin>=0.99) break;
+            clash_score=getClash(xyz_full,int_coor_array,miss_list,resi);
+            if (clash_score<=0) break;
+            if (Ntrial==0) clash_score_best=clash_score;
+            cerr<<"loop resi="<<resi<<";trial="<<Ntrial<<";clash="<<clash_score<<endl;
+            if (clash_score<=clash_score_best)
+            {
+                coor_prev[0]    =xyz_full[resi][0];
+                coor_prev[1]    =xyz_full[resi][1];
+                coor_prev[2]    =xyz_full[resi][2];
+                int_coor_prev[0]=int_coor_array[resi][0];
+                int_coor_prev[1]=int_coor_array[resi][1];
+                int_coor_prev[2]=int_coor_array[resi][2];
+            }
+            else if (clash_score>clash_score_best)
+            {
+                xyz_full[resi][0]=coor_prev[0];
+                xyz_full[resi][1]=coor_prev[1];
+                xyz_full[resi][2]=coor_prev[2];
+                int_coor_array[resi][0]=int_coor_prev[0];
+                int_coor_array[resi][1]=int_coor_prev[1];
+                int_coor_array[resi][2]=int_coor_prev[2];
             }
         }
         if (toggle<0)
         {
-            xyz_full[rstart][0]=xyz_full[rstart-1][0]+xyz[0];
-            xyz_full[rstart][1]=xyz_full[rstart-1][1]+xyz[1];
-            xyz_full[rstart][2]=xyz_full[rstart-1][2]+xyz[2];
             miss_list[rstart]=false;
             rstart++;
         }
         else
         {
-            xyz_full[rend][0]  =xyz_full[rend+1][0]  +xyz[0];
-            xyz_full[rend][1]  =xyz_full[rend+1][1]  +xyz[1];
-            xyz_full[rend][2]  =xyz_full[rend+1][2]  +xyz[2];
             miss_list[rend]=false;
             rend--;
         }
@@ -302,21 +375,39 @@ void fillLoop(int rstart, int rend, vector<vector<float> >&xyz_full,
     vector<float>().swap(rotate_axis);
     vector<float>().swap(xyz);
     vector<float>().swap(xyz_old);
+    vector<float>().swap(coor_prev);
+    vector<int>  ().swap(int_coor_prev);
     rstart=-1;
     rend=-1;
     return;
 }
 
-/* main function for atom filling */
-void MissingResidue(vector<vector<float> >&xyz_full, vector<bool>miss_list)
+/* main function for atom filling 
+ * d - distance between adjacent atoms */
+void MissingResidue(vector<vector<float> >&xyz_full, vector<bool>miss_list,
+    const float d=3.8)
 {
     int L=miss_list.size();
-    int i,j;
-    float d=3.8; // distance between adjacent atoms
+    int i;
+    int Ltail;
+    vector<float> coor_prev(3,0);
+    vector<float> xyz_rnd(3,0);
+    vector<int> int_coor_prev(3,0);
+    vector<vector<int> > int_coor_array(L,int_coor_prev);
+    for (i=0;i<L;i++) // lattice constant =4
+    {
+        if (miss_list[i]) continue;
+        int_coor_array[i][0]=xyz_full[i][0]/4;
+        int_coor_array[i][1]=xyz_full[i][1]/4;
+        int_coor_array[i][2]=xyz_full[i][2]/4;
+    }
+
+    int total_trial=5;
+    int Ntrial=0;
+    float clash_score=0;
+    float clash_score_best=0;
     
     /* fill C terminl tail */
-    int Ltail;
-    vector<vector<float> > cart_coor_array;
     Ltail=0;
     for (i=L-1;i>=0;i--)
     {
@@ -325,18 +416,42 @@ void MissingResidue(vector<vector<float> >&xyz_full, vector<bool>miss_list)
     }
     if (Ltail)
     {
-        cart_coor_array.assign(Ltail,xyz_full[L-1]);
-        RandomSphereSampling(cart_coor_array,d);
-        j=0;
         for (i=L-Ltail;i<L;i++)
         {
-            xyz_full[i][0]=xyz_full[i-1][0]+cart_coor_array[j][0];
-            xyz_full[i][1]=xyz_full[i-1][1]+cart_coor_array[j][1];
-            xyz_full[i][2]=xyz_full[i-1][2]+cart_coor_array[j][2];
-            cart_coor_array[j].clear();
-            j++;
+            for (Ntrial=0;Ntrial<total_trial;Ntrial++)
+            {
+                RandomSphereSampling(xyz_rnd,d);
+                xyz_full[i][0]      =xyz_full[i-1][0]+xyz_rnd[0];
+                xyz_full[i][1]      =xyz_full[i-1][1]+xyz_rnd[1];
+                xyz_full[i][2]      =xyz_full[i-1][2]+xyz_rnd[2];
+                int_coor_array[i][0]=xyz_full[i][0]/4;
+                int_coor_array[i][1]=xyz_full[i][1]/4;
+                int_coor_array[i][2]=xyz_full[i][2]/4;
+                clash_score=getClash(xyz_full,int_coor_array,miss_list,i);
+                if (clash_score<=0) break;
+                if (Ntrial==0) clash_score_best=clash_score;
+                cerr<<"C resi="<<i<<";trial="<<Ntrial<<";clash="<<clash_score<<endl;
+                if (clash_score<=clash_score_best)
+                {
+                    coor_prev[0]    =xyz_full[i][0];
+                    coor_prev[1]    =xyz_full[i][1];
+                    coor_prev[2]    =xyz_full[i][2];
+                    int_coor_prev[0]=int_coor_array[i][0];
+                    int_coor_prev[1]=int_coor_array[i][1];
+                    int_coor_prev[2]=int_coor_array[i][2];
+                }
+                else if (clash_score>clash_score_best)
+                {
+                    xyz_full[i][0]=coor_prev[0];
+                    xyz_full[i][1]=coor_prev[1];
+                    xyz_full[i][2]=coor_prev[2];
+                    int_coor_array[i][0]=int_coor_prev[0];
+                    int_coor_array[i][1]=int_coor_prev[1];
+                    int_coor_array[i][2]=int_coor_prev[2];
+                }
+            }
+            miss_list[i]=false;
         }
-        cart_coor_array.clear();
     }
    
     /* fill N terminl tail */
@@ -348,18 +463,42 @@ void MissingResidue(vector<vector<float> >&xyz_full, vector<bool>miss_list)
     }
     if (Ltail)
     {
-        cart_coor_array.assign(Ltail,xyz_full[0]);
-        RandomSphereSampling(cart_coor_array,d);
-        j=0;
         for (i=Ltail-1;i>=0;i--)
         {
-            xyz_full[i][0]=xyz_full[i+1][0]+cart_coor_array[j][0];
-            xyz_full[i][1]=xyz_full[i+1][1]+cart_coor_array[j][1];
-            xyz_full[i][2]=xyz_full[i+1][2]+cart_coor_array[j][2];
-            cart_coor_array[j].clear();
-            j++;
+            for (Ntrial=0;Ntrial<total_trial;Ntrial++)
+            {
+                RandomSphereSampling(xyz_rnd,d);
+                xyz_full[i][0]      =xyz_full[i+1][0]+xyz_rnd[0];
+                xyz_full[i][1]      =xyz_full[i+1][1]+xyz_rnd[1];
+                xyz_full[i][2]      =xyz_full[i+1][2]+xyz_rnd[2];
+                int_coor_array[i][0]=xyz_full[i][0]/4;
+                int_coor_array[i][1]=xyz_full[i][1]/4;
+                int_coor_array[i][2]=xyz_full[i][2]/4;
+                clash_score=getClash(xyz_full,int_coor_array,miss_list,i);
+                if (clash_score<=0) break;
+                if (Ntrial==0) clash_score_best=clash_score;
+                cerr<<"N resi="<<i<<";trial="<<Ntrial<<";clash="<<clash_score<<endl;
+                if (clash_score<=clash_score_best)
+                {
+                    coor_prev[0]    =xyz_full[i][0];
+                    coor_prev[1]    =xyz_full[i][1];
+                    coor_prev[2]    =xyz_full[i][2];
+                    int_coor_prev[0]=int_coor_array[i][0];
+                    int_coor_prev[1]=int_coor_array[i][1];
+                    int_coor_prev[2]=int_coor_array[i][2];
+                }
+                else if (clash_score>clash_score_best)
+                {
+                    xyz_full[i][0]=coor_prev[0];
+                    xyz_full[i][1]=coor_prev[1];
+                    xyz_full[i][2]=coor_prev[2];
+                    int_coor_array[i][0]=int_coor_prev[0];
+                    int_coor_array[i][1]=int_coor_prev[1];
+                    int_coor_array[i][2]=int_coor_prev[2];
+                }
+            }
+            miss_list[i]=false;
         }
-        cart_coor_array.clear();
     }
 
     /* fill loop in the middle */
@@ -379,11 +518,14 @@ void MissingResidue(vector<vector<float> >&xyz_full, vector<bool>miss_list)
             rend=i;
             continue;
         }
-        fillLoop(rstart,rend,xyz_full,miss_list,d);
+        fillLoop(rstart,rend,xyz_full,int_coor_array,miss_list,d);
     }
    
     /* clean up */
-    vector<vector<float> >().swap(cart_coor_array);
+    vector<float>().swap(coor_prev);
+    vector<float>().swap(xyz_rnd);
+    vector<vector<int> >().swap(int_coor_array);
+    vector<int>().swap(int_coor_prev);
     return;
 }
 #endif
