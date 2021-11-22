@@ -17,6 +17,7 @@ src/AllDist
 src/MissingRNAatom
 src/MissingResidue
 src/NaTorsion
+src/NaTorsion2
 src/BPtorsion
 src/newChainID
 src/cssr

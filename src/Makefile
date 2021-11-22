@@ -2,7 +2,7 @@ CC=g++
 CFLAGS=-O3
 LDFLAGS=-static
 
-PROG=NaTorsion MissingRNAatom BPtorsion cssr newChainID NAbuilder AllDist MissingResidue
+PROG=NaTorsion NaTorsion2 MissingRNAatom BPtorsion cssr newChainID NAbuilder AllDist MissingResidue
 HEADER=PDBParser.hpp pstream.h GeometryTools.hpp
 
 all: ${PROG}
@@ -17,6 +17,9 @@ NAbuilder: NAbuilder.cpp NAbuilder.hpp pseudo_torsion_prob.hpp ${HEADER}
 	${CC} ${CFLAGS} $@.cpp -o $@ ${LDFLAGS}
 
 NaTorsion: NaTorsion.cpp NaTorsion.hpp ${HEADER}
+	${CC} ${CFLAGS} $@.cpp -o $@ ${LDFLAGS}
+
+NaTorsion2: NaTorsion2.cpp NaTorsion2.hpp ${HEADER}
 	${CC} ${CFLAGS} $@.cpp -o $@ ${LDFLAGS}
 
 BPtorsion: BPtorsion.cpp BPtorsion.hpp StringTools.hpp ${HEADER}
