@@ -71,9 +71,9 @@ int main(int argc,char **argv)
         show_tor, show_len, show_ang, BPtorMat, BPlenMat, BPangMat);
 
     cout<<"N c resi  N c resi  name       ";
-    if (show_tor)   cout<<"    PCCP    CNNC";
+    if (show_tor)   cout<<"    PCCP    CNNC    PNNP";
     if (show_len)   cout<<"      PP      CC      NN";
-    if (show_ang)   cout<<"     aPC     aCN";
+    if (show_ang)   cout<<"     aPC     aCN     aPN";
     cout<<endl;
 
     size_t bp;
@@ -88,7 +88,8 @@ int main(int argc,char **argv)
         {
             cout<<setiosflags(ios::fixed)<<setprecision(2)
                 <<' '<<setw(7)<<BPtorMat[bp][0]
-                <<' '<<setw(7)<<BPtorMat[bp][1];
+                <<' '<<setw(7)<<BPtorMat[bp][1]
+                <<' '<<setw(7)<<BPtorMat[bp][2];
             BPtorMat[bp].clear();
         }
         if (show_len)
@@ -103,7 +104,8 @@ int main(int argc,char **argv)
         {
             cout<<setiosflags(ios::fixed)<<setprecision(2)
                 <<' '<<setw(7)<<BPangMat[bp][0]
-                <<' '<<setw(7)<<BPangMat[bp][1];
+                <<' '<<setw(7)<<BPangMat[bp][1]
+                <<' '<<setw(7)<<BPangMat[bp][2];
                 BPangMat[bp].clear();
         }
         cout<<endl;

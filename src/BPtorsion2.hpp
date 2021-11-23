@@ -162,7 +162,7 @@ void BPtorsion2(const vector<char>&chain1_list, const vector<char>&chain2_list,
     const bool show_ang, vector<vector<float> >&BPtorMat,
     vector<vector<float> >&BPlenMat, vector<vector<float> >&BPangMat)
 {
-    vector<float> tmp_tor(2,-360.);
+    vector<float> tmp_tor(3,-360.);
     vector<float> tmp_len(3,-1.);
     vector<float> tmp_ang(3,-360.);
 
@@ -272,6 +272,7 @@ void BPtorsion2(const vector<char>&chain1_list, const vector<char>&chain2_list,
         {
             if (has_Pi  && has_C4i && has_C4j && has_Pj ) BPtorMat[bp][0]=rad2deg(Points2Dihedral( Pi,C4i,C4j, Pj)); // PCCP: P[i]-C4'[i]-C4'[j]-P[j]
             if (has_C4i && has_Nxi && has_Nxj && has_C4j) BPtorMat[bp][1]=rad2deg(Points2Dihedral(C4i,Nxi,Nxj,C4j)); // CNNC: C4'[i]-N[i]-N[j]-C4'[j]
+            if (has_Pi  && has_Nxi && has_Nxj && has_Pj ) BPtorMat[bp][2]=rad2deg(Points2Dihedral( Pi,Nxi,Nxj, Pj)); // PNNP: P[i]-N[i]-N[j]-P[j]
         }
         if (show_len)
         {
@@ -283,6 +284,7 @@ void BPtorsion2(const vector<char>&chain1_list, const vector<char>&chain2_list,
         {
             if (has_Pi  && has_C4i && has_Pj  && has_C4j) BPangMat[bp][0]=rad2deg(Points4Angle( Pi,C4i, Pj,C4j)); // aPC: <P[i]C4'[i],P[j]C4'[j]>
             if (has_C4i && has_Nxi && has_C4j && has_Nxj) BPangMat[bp][1]=rad2deg(Points4Angle(C4i,Nxi,C4j,Nxj)); // aCN: <C4'[i]N[i],C4'[j]N[j]>
+            if (has_Pi  && has_Nxi && has_Pj  && has_Nxj) BPangMat[bp][2]=rad2deg(Points4Angle( Pi,Nxi, Pj,Nxj)); // aPN: <P[i]N[i],P[j]N[j]>
         }
     }
 

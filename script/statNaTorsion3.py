@@ -84,6 +84,10 @@ def statNaTorsion(rawfile):
         plt.subplot(4,4,a+1)
         
         bond_data=data[:,a]
+        if a<6 or a>=12:
+            bond_data=bond_data[bond_data>=-180]
+        else:
+            bond_data=bond_data[bond_data>0]
         mu=bond_data.mean()
         sigma=bond_data.std()
         if a<6:
