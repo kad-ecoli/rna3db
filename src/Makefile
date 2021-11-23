@@ -25,6 +25,9 @@ NaTorsion2: NaTorsion2.cpp NaTorsion2.hpp ${HEADER}
 BPtorsion: BPtorsion.cpp BPtorsion.hpp StringTools.hpp ${HEADER}
 	${CC} ${CFLAGS} $@.cpp -o $@ ${LDFLAGS}
 
+BPtorsion2: BPtorsion2.cpp BPtorsion2.hpp StringTools.hpp ${HEADER}
+	${CC} ${CFLAGS} $@.cpp -o $@ ${LDFLAGS}
+
 cssr: cssr.cpp cssr.hpp BPstat.hpp ${HEADER}
 	${CC} ${CFLAGS} $@.cpp -o $@ ${LDFLAGS}
 
