@@ -48,6 +48,7 @@ resolu_cs_list="all_c1.0_s1.0"
 for resolu_cs in $resolu_cs_list;do
     echo $resolu_cs
     mkdir -p $rootdir/cull/$resolu_cs/DSSR
+    mkdir -p $rootdir/cull/$resolu_cs/RNAfold
     grep '>' $rootdir/cull/pdb_atom.sort.$resolu_cs|cut -f1|sed 's/>//g' > $rootdir/cull/$resolu_cs/list
     cd $rootdir/cull/$resolu_cs
 
@@ -61,6 +62,7 @@ for resolu_cs in $resolu_cs_list;do
             rm DSSR/$target.dbn
             rm DSSR/$target.sto
             rm DSSR/$target.cm
+	    rm RNAfold/${target}_dp.ps.gz
         fi
     done
     
@@ -108,7 +110,20 @@ for resolu_cs in $resolu_cs_list;do
         fi
         rm dssr-*
     done
-    
+
+    echo "generate _dp.ps.gz"
+    cd $rootdir/cull/$resolu_cs/RNAfold
+    for target in `cat $rootdir/cull/$resolu_cs/list`;do
+        if [ -s "${target}_dp.ps.gz" ];then
+            continue
+        fi
+	echo ">$target" > $target.fasta
+	grep -PA1 "^>$target\b" $rootdir/cull/pdb_atom.sort.$resolu_cs|grep -v '>'|tr "[:lower:]" "[:upper:]" >> $target.fasta
+        $bindir/RNAfold -p  $target.fasta
+	gzip ${target}_dp.ps
+	rm $target.fasta ${target}_ss.ps
+    done
+
     echo "re-copy $PWD/*.pdb"
     cd $rootdir/cull/$resolu_cs/
     $bindir/clean_pdb.py -dir=$rootdir/pdb/data/structures/all/pdb/ list -suffix=.pdb.gz .pdb -StartIndex=1 -NewChainID=_
