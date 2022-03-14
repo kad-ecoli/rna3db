@@ -41,6 +41,7 @@ resolu_cs_list="all_c1.0_s1.0"
 for resolu_cs in $resolu_cs_list;do
     echo $resolu_cs
     mkdir -p $dimerdir/$resolu_cs/DSSR
+    mkdir -p $dimerdir/$resolu_cs/RNAfold
     grep '>' $dimerdir/pdb_atom.sort.$resolu_cs|cut -f1|sed 's/>//g' > $dimerdir/$resolu_cs/list
     cd $dimerdir/$resolu_cs
 
@@ -52,6 +53,9 @@ for resolu_cs in $resolu_cs_list;do
             rm $target.pdb
             rm DSSR/$target.dssr
             rm DSSR/$target.dbn
+            rm DSSR/$target.sto
+            rm DSSR/$target.cm
+	    rm RNAfold/${target}_dp.ps.gz
         fi
     done
     
@@ -99,7 +103,21 @@ for resolu_cs in $resolu_cs_list;do
         fi
         rm dssr-*
     done
-    
+
+    echo "generate _dp.ps.gz"
+    cd $rootdir/dimer/$resolu_cs/RNAfold
+    for target in `cat $rootdir/dimer/$resolu_cs/list`;do
+        if [ -s "${target}_dp.ps.gz" ];then
+            continue
+        fi
+	echo ">$target" > $target.fasta
+	grep -PA2 "^>$target\b" $rootdir/dimer/pdb_atom.sort.$resolu_cs|grep -v '>'|tr "[:lower:]" "[:upper:]" >> $target.fasta
+        $bindir/RNAfold -p  $target.fasta
+	mv `echo ${target}_dp.ps|sed 's/:/_/g'` ${target}_dp.ps
+	gzip ${target}_dp.ps
+	rm $target.fasta `echo ${target}_ss.ps|sed "s/:/_/g"`
+    done
+
     echo "re-copy $PWD/*.pdb"
     cd $rootdir/dimer/$resolu_cs
     $bindir/cleanDimerPdb.py -dir=$rootdir/pdb/data/structures/all/pdb/ list -suffix=.pdb.gz .pdb
