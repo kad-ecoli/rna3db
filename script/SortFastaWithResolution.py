@@ -67,7 +67,7 @@ fp=open(outfile+".all.fasta",'w')
 fp.write(txt)
 fp.close()
 
-for cutoff in [1.5,2.0,2.5,3.0,3.5,4.0,20]: # 20 includes RNA
+for cutoff in [1.5,2.0,2.5,3.0,3.5,4.0,20]: # 20 includes NMR
     txt=''
     for L,resolu,header,sequence in fasta_list:
         if nmr_dict[header[:4]]:
